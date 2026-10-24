@@ -131,6 +131,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) tick
 setRerender(render);
 subscribe(render);
 onSyncChange((kind) => {
+  if (kind === 'recovery') { location.hash = '#/settings'; return render(); }
   if (kind === 'auth') return render();
   document.querySelectorAll('[data-sync-status]').forEach((el) => { el.textContent = statusText(); });
 });

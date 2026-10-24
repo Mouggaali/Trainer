@@ -38,7 +38,7 @@ index.html            app-shell (view, tabbar, rest-timer, sheet, toast)
 css/styles.css        alle styling (dark theme, mobile-first)
 js/app.js             router (hash), event-delegatie, ticker (rusttimer/klok), tabbar
 js/store.js           state, opslag, seed-data, queries (exerciseSessions, allExercises, ...)
-js/sync.js            Supabase login (e-mailcode) + push/pull van de state
+js/sync.js            Supabase login (e-mail + wachtwoord) + push/pull van de state
 js/config.js          GEGENEREERD, gitignored (Supabase URL + publishable key)
 js/progression.js     gewichtsadvies-algoritme + e1RM
 js/stats.js           weekstatistieken, volume, streaks, records

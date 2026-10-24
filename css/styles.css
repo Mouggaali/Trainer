@@ -374,3 +374,4 @@ body[data-route="active"] #tabbar { display: none; }
 .sync-line { margin-top: 2px; }
 code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
 .btn:disabled { opacity: .5; pointer-events: none; }
+.notice { background: var(--accent-soft); color: var(--text); border-radius: 10px; padding: 10px 12px; font-size: 14px; }

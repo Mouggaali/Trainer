@@ -13,6 +13,7 @@ let status = 'loading'; // loading | unconfigured | offline | loggedout | syncin
 let lastError = '';
 let pushTimer = null;
 let pulling = false;
+let recovery = false; // user opened a "reset password" link and must choose a new password
 const listeners = new Set();
 
 const meta = () => { try { return JSON.parse(localStorage.getItem(META_KEY)) || {}; } catch { return {}; } };
@@ -25,7 +26,7 @@ function setStatus(s, err = '') { status = s; lastError = err; emit('status'); }
 
 export function syncInfo() {
   const m = meta();
-  return { status, email: user?.email || null, lastError, lastSyncedAt: m.lastSyncedAt || 0, dirty: !!m.dirty, configured: !!sb };
+  return { status, email: user?.email || null, lastError, lastSyncedAt: m.lastSyncedAt || 0, dirty: !!m.dirty, configured: !!sb, recovery };
 }
 
 export function statusText() {
@@ -51,7 +52,8 @@ export async function initSync() {
     auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'trainer.auth' },
   });
 
-  sb.auth.onAuthStateChange((_event, session) => {
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') { recovery = true; emit('recovery'); }
     const prev = user?.id;
     user = session?.user || null;
     if (!user) { setStatus('loggedout'); if (prev) emit('auth'); return; }
@@ -63,7 +65,7 @@ export async function initSync() {
 
   const { data } = await sb.auth.getSession();
   if (!data.session) setStatus('loggedout');
-  // Remove ?code=... left by the magic-link redirect.
+  // Remove ?code=... left by a confirmation / reset-password link.
   if (location.search) history.replaceState(null, '', location.pathname + location.hash);
 
   onSave(() => {
@@ -168,18 +170,42 @@ function fail(e) {
   setStatus(navigator.onLine === false ? 'offline' : 'error', e?.message || String(e));
 }
 
-// ---------- Auth ----------
-export async function sendLoginCode(email) {
-  const { error } = await sb.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true },
-  });
-  if (error) throw error;
+// ---------- Auth (e-mail + wachtwoord) ----------
+const AUTH_ERRORS = [
+  [/invalid login credentials/i, 'E-mail of wachtwoord klopt niet'],
+  [/email not confirmed/i, 'Bevestig eerst je e-mailadres via de link in de mail'],
+  [/already registered/i, 'Dit e-mailadres heeft al een account. Log in.'],
+  [/password should be at least/i, 'Wachtwoord moet minstens 6 tekens zijn'],
+  [/rate limit|too many/i, 'Te veel pogingen. Wacht even en probeer opnieuw.'],
+];
+function authError(error) {
+  const hit = AUTH_ERRORS.find(([re]) => re.test(error.message));
+  return new Error(hit ? hit[1] : error.message);
+}
+const redirectTo = () => location.origin + location.pathname;
+
+export async function signIn(email, password) {
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) throw authError(error);
 }
 
-export async function verifyLoginCode(email, token) {
-  const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
-  if (error) throw error;
+/** Returns true when the account still needs e-mail confirmation. */
+export async function signUp(email, password) {
+  const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo() } });
+  if (error) throw authError(error);
+  return !data.session;
+}
+
+export async function resetPassword(email) {
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo() });
+  if (error) throw authError(error);
+}
+
+export async function setNewPassword(password) {
+  const { error } = await sb.auth.updateUser({ password });
+  if (error) throw authError(error);
+  recovery = false;
+  emit('auth');
 }
 
 export async function syncNow() {

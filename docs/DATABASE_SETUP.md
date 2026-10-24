@@ -62,7 +62,9 @@ Daarna op je iPhone: open de link in Safari → Deel → **Zet op beginscherm**.
 - Sync-logica: `js/sync.js`. Lokaal blijft de bron; elke wijziging wordt na 1,5 s geüpload, bij openen /
   terugkeren naar de app wordt de cloudversie opgehaald. Conflict = nieuwste `modifiedAt` wint.
   Dagelijks een snapshot in `app_state_backups`.
-- Inloggen: Profiel → Instellingen → Cloud-sync → e-mail → code uit de mail (of de link).
+- Inloggen: Profiel → Instellingen → Cloud-sync → **e-mail + wachtwoord** (Account aanmaken / Inloggen /
+  Wachtwoord vergeten). Gekozen i.p.v. een e-mailcode omdat Supabase de mailtemplates op het gratis plan
+  alleen laat aanpassen met een eigen SMTP-server.
 
 ## Nog door de gebruiker te doen in dashboards
 1. GitHub → repo → Settings → Secrets and variables → Actions → **New repository secret**:
@@ -70,6 +72,5 @@ Daarna op je iPhone: open de link in Safari → Deel → **Zet op beginscherm**.
 2. GitHub → Settings → Pages → Source: **GitHub Actions**.
 3. Supabase → Authentication → URL Configuration: Site URL `https://mouggaali.github.io/Trainer/`,
    Redirect URLs `https://mouggaali.github.io/Trainer/**` en `http://localhost:5173/**`.
-4. Supabase → Authentication → Emails → **Magic Link**-template: voeg `{{ .Token }}` toe, zodat de mail een
-   code bevat (nodig voor de iPhone-beginschermapp, die de link opent in Safari i.p.v. in de app).
+4. ~~Mailtemplates aanpassen~~ — niet meer nodig (wachtwoord-login).
 5. Optioneel, na je eerste login: Authentication → Sign In / Providers → "Allow new users to sign up" uit.
