@@ -28,6 +28,8 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
   (`public.app_state`, één JSON-rij per gebruiker) door `js/sync.js`. supabase-js komt via jsDelivr CDN.
 - **Secrets**: de gebruiker wil **geen keys in de GitHub-repo**. `.env` en `js/config.js` zijn gitignored;
   `tools/build-config.js` maakt `js/config.js` uit `.env` (lokaal) of uit repo secrets (GitHub Actions).
+- **Login verplicht**: `gateState()` (`js/sync.js`) bepaalt in `render()` of de app of het inlogscherm
+  (`js/views/login.js`) getoond wordt; opgeslagen sessie = app open (ook offline). Uitloggen wist lokale data.
 - **Hosting**: GitHub Pages via `.github/workflows/deploy.yml` → https://mouggaali.github.io/Trainer/
 - **PWA**: `manifest.webmanifest` + `sw.js` (network-first) → installeerbaar op het beginscherm.
 - **Charts**: eigen kleine SVG-charts in `js/charts.js` (geen libraries).
@@ -75,4 +77,4 @@ Open http://localhost:5173. Op de telefoon (zelfde wifi): het LAN-adres dat de s
 ## Belangrijk
 - Bestaande gebruikersdata nooit breken: bij schemawijzigingen `version` ophogen en een migratie in
   `store.js` → `migrate()` toevoegen.
-- Data staat lokaal in de browser. Export/import (Instellingen) is de back-up tot de cloud-database er is.
+- Data staat lokaal (offline-first) én in Supabase. Export/import (Instellingen) is een extra back-up.

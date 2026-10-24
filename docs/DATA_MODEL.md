@@ -36,6 +36,10 @@ Tijdstippen zijn epoch-milliseconden; datums van metingen zijn `YYYY-MM-DD`.
 }
 ```
 
+## Andere localStorage-keys
+- `trainer.auth` — Supabase-sessie (supabase-js `storageKey`); aanwezig = ingelogd, app open.
+- `trainer.sync` — sync-meta (`linkedUser`, `lastSyncedAt`, `dirty`, `lastBackupDay`).
+
 ## Meetpunten (`MEASURE_PARTS` in `js/views/body.js`)
 Enkel: `neck`, `shoulders`, `chest`, `waist`, `hips`, `bodyfat` (%).
 Links/rechts (`_L` / `_R`): `biceps`, `forearm`, `thigh`, `calf`.

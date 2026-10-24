@@ -1,11 +1,12 @@
 // Cloud sync with Supabase. Local storage stays the source of truth (works offline in the gym);
 // the whole state is mirrored to public.app_state (one row per user, see supabase/schema.sql).
 // Conflicts: last write wins, based on state.modifiedAt.
-import { getState, replaceState, onSave } from './store.js';
+import { getState, replaceState, onSave, clearLocalData } from './store.js';
 import { choose, todayISO } from './ui.js';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 const META_KEY = 'trainer.sync';
+const AUTH_KEY = 'trainer.auth'; // supabase-js session storage key
 
 let sb = null;
 let user = null;
@@ -29,6 +30,21 @@ export function syncInfo() {
   return { status, email: user?.email || null, lastError, lastSyncedAt: m.lastSyncedAt || 0, dirty: !!m.dirty, configured: !!sb, recovery };
 }
 
+function hasStoredSession() {
+  try { return !!localStorage.getItem(AUTH_KEY); } catch { return false; }
+}
+
+/**
+ * Login gate: 'open' (app usable), 'splash' (still loading, no saved session) or 'login'.
+ * A saved session keeps the app open offline and while supabase-js loads.
+ */
+export function gateState() {
+  if (status === 'unconfigured' || user) return 'open';
+  if (hasStoredSession() && status !== 'loggedout') return 'open';
+  if (status === 'loading') return 'splash';
+  return 'login';
+}
+
 export function statusText() {
   const i = syncInfo();
   switch (i.status) {
@@ -49,7 +65,7 @@ export async function initSync() {
   try { ({ createClient } = await import(SUPABASE_JS)); } catch { setStatus('offline'); return; }
 
   sb = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY, {
-    auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'trainer.auth' },
+    auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: AUTH_KEY },
   });
 
   sb.auth.onAuthStateChange((event, session) => {
@@ -140,8 +156,9 @@ function applyRemote(data, ts) {
   setStatus('idle');
 }
 
+/** Uploads the local state. Returns true on success. */
 async function push() {
-  if (!sb || !user) return;
+  if (!sb || !user) return false;
   clearTimeout(pushTimer);
   setStatus('syncing');
   try {
@@ -155,8 +172,10 @@ async function push() {
       setMeta({ lastBackupDay: todayISO() });
     }
     setStatus('idle');
+    return true;
   } catch (e) {
     fail(e);
+    return false;
   }
 }
 
@@ -213,8 +232,13 @@ export async function syncNow() {
   await pull();
 }
 
+/** Uploads everything, signs out and wipes this device. Throws (and keeps the data) if the upload fails. */
 export async function logout() {
-  if (meta().dirty) await push();
+  const ok = await push();
+  if (!ok) throw new Error('Geen verbinding: je laatste wijzigingen staan nog niet in de cloud. Probeer het straks opnieuw.');
   await sb.auth.signOut();
-  setMeta({ linkedUser: null, lastSyncedAt: 0 });
+  try { localStorage.removeItem(META_KEY); } catch { /* ignore */ }
+  clearLocalData();
 }
+
+export const isOnlineCapable = () => !!sb;

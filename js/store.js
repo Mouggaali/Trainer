@@ -163,6 +163,14 @@ export function importData(json) {
   update((s) => { Object.keys(s).forEach((k) => delete s[k]); Object.assign(s, migrate(data)); });
 }
 
+/** Wipe this device (after logout) without triggering sync hooks. */
+export function clearLocalData() {
+  Object.keys(state).forEach((k) => delete state[k]);
+  Object.assign(state, defaults());
+  save();
+  listeners.forEach((l) => l());
+}
+
 export function resetData() {
   update((s) => { Object.keys(s).forEach((k) => delete s[k]); Object.assign(s, defaults()); });
 }

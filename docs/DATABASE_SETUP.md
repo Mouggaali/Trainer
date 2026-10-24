@@ -62,7 +62,11 @@ Daarna op je iPhone: open de link in Safari → Deel → **Zet op beginscherm**.
 - Sync-logica: `js/sync.js`. Lokaal blijft de bron; elke wijziging wordt na 1,5 s geüpload, bij openen /
   terugkeren naar de app wordt de cloudversie opgehaald. Conflict = nieuwste `modifiedAt` wint.
   Dagelijks een snapshot in `app_state_backups`.
-- Inloggen: Profiel → Instellingen → Cloud-sync → **e-mail + wachtwoord** (Account aanmaken / Inloggen /
+- **Inloggen is verplicht**: zonder sessie toont de app alleen het inlogscherm (`js/views/login.js`,
+  gate = `gateState()` in `js/sync.js`). Een opgeslagen sessie (`localStorage['trainer.auth']`) houdt de app
+  open, ook offline. **Uitloggen** uploadt eerst alles (mislukt dat → niet uitloggen) en wist daarna de
+  lokale data (`clearLocalData()`).
+- Inlogscherm: **e-mail + wachtwoord** (Account aanmaken / Inloggen /
   Wachtwoord vergeten). Gekozen i.p.v. een e-mailcode omdat Supabase de mailtemplates op het gratis plan
   alleen laat aanpassen met een eigen SMTP-server.
 

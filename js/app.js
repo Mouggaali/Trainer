@@ -7,7 +7,8 @@ import { renderProfile, renderSettings } from './views/profile.js';
 import { renderExercises, mountExercises, renderExerciseDetail } from './views/exercises.js';
 import { renderBody, renderMeasureForm } from './views/body.js';
 import { renderMonsterDetail } from './views/team.js';
-import { initSync, onSyncChange, statusText } from './sync.js';
+import { initSync, onSyncChange, statusText, gateState } from './sync.js';
+import { renderLogin, renderSplash } from './views/login.js';
 
 const routes = {
   workout: { render: renderHome, tab: 'workout' },
@@ -38,7 +39,18 @@ function parseRoute() {
 
 const view = document.getElementById('view');
 
+let lastGate = null;
+
 function render() {
+  lastGate = gateState();
+  if (lastGate !== 'open') {
+    // Login gate: nothing of the app is shown until the user is signed in.
+    view.innerHTML = lastGate === 'splash' ? renderSplash() : renderLogin();
+    document.body.dataset.route = 'login';
+    for (const id of ['tabbar', 'workout-bar', 'rest-bar']) document.getElementById(id).innerHTML = '';
+    document.body.classList.remove('has-workout-bar', 'has-rest');
+    return;
+  }
   const { root, param } = parseRoute();
   const r = routes[root];
   view.innerHTML = r.render(param);
@@ -86,6 +98,7 @@ function renderRestBar() {
 function tick() {
   const now = Date.now();
   document.querySelectorAll('[data-elapsed]').forEach((el) => { el.textContent = fmtElapsed(now - Number(el.dataset.elapsed)); });
+  if (lastGate !== 'open') return;
   const a = getState().active;
   const r = a?.rest;
   if (!r) return;
@@ -134,7 +147,7 @@ setRerender(render);
 subscribe(render);
 onSyncChange((kind) => {
   if (kind === 'recovery') { location.hash = '#/settings'; return render(); }
-  if (kind === 'auth') return render();
+  if (kind === 'auth' || gateState() !== lastGate) return render();
   document.querySelectorAll('[data-sync-status]').forEach((el) => { el.textContent = statusText(); });
 });
 render();

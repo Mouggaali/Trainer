@@ -5,11 +5,9 @@ import { workingSets } from '../progression.js';
 import { weeklyStats, weekStreak, bestE1rm, exerciseRecords, trainedExercises, setVolume } from '../stats.js';
 import { REST_OPTIONS, restLabel } from './templates.js';
 import { renderParty } from './team.js';
-import { syncInfo, statusText, signIn, signUp, resetPassword, setNewPassword, syncNow, logout } from '../sync.js';
+import { syncInfo, statusText, setNewPassword, syncNow, logout } from '../sync.js';
 
 let selEx = null;
-let loginEmail = '';
-let authNotice = '';
 let metric = 'e1rm';
 
 const METRICS = {
@@ -129,26 +127,9 @@ function syncCard() {
       <button class="btn btn-soft btn-block" data-action="sync-now">Nu synchroniseren</button>
       <button class="btn btn-secondary btn-block" data-action="sync-logout">Uitloggen</button>`;
   } else {
-    body = `<p class="muted small">Log in om je data veilig in de cloud te bewaren en te synchroniseren tussen telefoon en laptop.</p>
-      ${authNotice ? `<p class="notice">${esc(authNotice)}</p>` : ''}
-      <form class="form" onsubmit="return false">
-        <label>E-mail<input type="email" id="sync-email" autocomplete="username" inputmode="email" value="${esc(loginEmail)}" placeholder="jij@voorbeeld.nl"></label>
-        <label>Wachtwoord<input type="password" id="sync-pw" autocomplete="current-password" placeholder="minstens 6 tekens"></label>
-        <button class="btn btn-primary btn-block" data-action="sync-signin">Inloggen</button>
-        <button class="btn btn-secondary btn-block" data-action="sync-signup" type="button">Account aanmaken</button>
-      </form>
-      <button class="link-btn" data-action="sync-forgot">Wachtwoord vergeten?</button>
-      <div class="muted small" data-sync-status>${esc(statusText())}</div>`;
+    body = `<div class="muted small" data-sync-status>${esc(statusText())}</div>`;
   }
   return `<h2 class="section-title">Cloud-sync</h2><section class="card">${body}</section>`;
-}
-
-function readLogin(needPw = true) {
-  loginEmail = document.getElementById('sync-email').value.trim();
-  const pw = document.getElementById('sync-pw').value;
-  if (!/^\S+@\S+\.\S+$/.test(loginEmail)) throw new Error('Vul een geldig e-mailadres in');
-  if (needPw && pw.length < 6) throw new Error('Wachtwoord moet minstens 6 tekens zijn');
-  return pw;
 }
 
 const busy = async (el, fn) => {
@@ -157,28 +138,6 @@ const busy = async (el, fn) => {
 };
 
 on({
-  'sync-signin': (el) => busy(el, async () => {
-    const pw = readLogin();
-    await signIn(loginEmail, pw);
-    authNotice = '';
-    toast('Ingelogd ☁️');
-  }),
-  'sync-signup': (el) => busy(el, async () => {
-    const pw = readLogin();
-    const needsConfirm = await signUp(loginEmail, pw);
-    if (needsConfirm) {
-      authNotice = 'Account aangemaakt. Open de bevestigingsmail en tik op de link, log daarna hier in met je wachtwoord.';
-      go(location.hash);
-    } else {
-      toast('Account aangemaakt en ingelogd ☁️');
-    }
-  }),
-  'sync-forgot': (el) => busy(el, async () => {
-    readLogin(false);
-    await resetPassword(loginEmail);
-    authNotice = 'Mail verstuurd. Tik op de link in de mail om een nieuw wachtwoord te kiezen.';
-    go(location.hash);
-  }),
   'sync-newpw': (el) => busy(el, async () => {
     const pw = document.getElementById('sync-newpw').value;
     if (pw.length < 6) throw new Error('Wachtwoord moet minstens 6 tekens zijn');
@@ -187,7 +146,7 @@ on({
   }),
   'sync-now': (el) => busy(el, syncNow),
   'sync-logout': async (el) => {
-    if (!(await confirmDialog('Uitloggen?', 'Je data blijft op dit apparaat staan, maar wordt niet meer gesynchroniseerd.', 'Uitloggen'))) return;
+    if (!(await confirmDialog('Uitloggen?', 'Je data blijft veilig in de cloud en wordt van dit apparaat gewist. Log opnieuw in om alles terug te krijgen.', 'Uitloggen'))) return;
     busy(el, logout);
   },
   'prof-ex': (el) => { selEx = el.value; go(location.hash); },

@@ -80,3 +80,19 @@
 /* Workout header: minimize + cancel on the left */
 .wo-top-left { display: flex; gap: 8px; }
 .active-card .icon-btn.danger { color: var(--red); }
+
+/* ---------- Login gate / title screen ---------- */
+body[data-route="login"] #tabbar { display: none; }
+body[data-route="login"] #view { padding-bottom: calc(var(--safe-b) + 24px); }
+.title-screen { min-height: calc(100vh - 40px); display: flex; flex-direction: column; justify-content: center; gap: 16px; padding-top: 12px; }
+.title-hero { display: grid; justify-items: center; gap: 10px; }
+.title-logo {
+  font: 28px/1.2 var(--font-pixel); color: #f8d030; letter-spacing: 2px;
+  text-shadow: 4px 0 0 var(--fire-dark), -4px 0 0 var(--fire-dark), 0 4px 0 var(--fire-dark), 0 -4px 0 var(--fire-dark),
+    4px 4px 0 var(--ink), 6px 6px 0 var(--ink);
+}
+@media (max-width: 360px) { .title-logo { font-size: 22px; } }
+.title-sprite .monster { width: 128px; height: 128px; display: block; }
+.title-blink { text-align: center; font: 11px/1.6 var(--font-pixel); color: #fff; text-shadow: 2px 2px 0 var(--ink); animation: banner-blink 1s steps(1) infinite; }
+.login-card h2 { margin-bottom: 8px; }
+.title-foot { text-align: center; color: #fff; text-shadow: 1px 1px 0 var(--ink); font-size: 18px; margin: 0 8px; }
