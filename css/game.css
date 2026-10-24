@@ -76,3 +76,7 @@
 @media (prefers-reduced-motion: reduce) {
   .gain-card.evolving .monster, .gain-banner, .dialog-overlay { animation: none; }
 }
+
+/* Workout header: minimize + cancel on the left */
+.wo-top-left { display: flex; gap: 8px; }
+.active-card .icon-btn.danger { color: var(--red); }

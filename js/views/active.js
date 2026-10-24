@@ -112,7 +112,10 @@ export function renderActive() {
   const done = all.filter((x) => x.done).length;
   return `
     <header class="wo-top">
-      <button class="icon-btn" data-action="go" data-href="#/workout" aria-label="Minimaliseren">${icon('chevronDown')}</button>
+      <div class="wo-top-left">
+        <button class="icon-btn" data-action="go" data-href="#/workout" aria-label="Minimaliseren">${icon('chevronDown')}</button>
+        <button class="icon-btn danger" data-action="wo-cancel" aria-label="Training annuleren">${icon('x')}</button>
+      </div>
       <div class="wo-clock" data-elapsed="${a.startedAt}">${fmtElapsed(Date.now() - a.startedAt)}</div>
       <button class="btn btn-green btn-sm" data-action="wo-finish">Klaar</button>
     </header>
@@ -371,11 +374,16 @@ on({
   },
   'wo-finish': () => finishWorkout(),
   'wo-cancel': async () => {
-    const v = await choose('Training annuleren?', 'Alle sets van deze training worden verwijderd.', [
+    const a = getState().active;
+    const done = a ? a.exercises.flatMap((e) => e.sets).filter((x) => x.done).length : 0;
+    const text = done
+      ? `Je hebt al ${done} set(s) afgevinkt. Bij annuleren wordt niets opgeslagen en krijg je geen EXP.`
+      : 'Per ongeluk gestart? Er wordt niets opgeslagen.';
+    const v = await choose('Training annuleren?', text, [
       { label: 'Ja, annuleren', value: 'yes', style: 'btn-danger' },
       { label: 'Doorgaan met trainen', value: '' },
     ]);
-    if (v === 'yes') { update((s) => { s.active = null; }); go('#/workout'); }
+    if (v === 'yes') { update((s) => { s.active = null; }); toast('Training geannuleerd'); go('#/workout'); }
   },
   'rest-adj': (el) => update((s) => {
     const r = s.active?.rest;

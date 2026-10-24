@@ -27,12 +27,13 @@ export function renderHome() {
   const forms = Object.fromEntries(computeTeam(s).team.map((t) => [t.muscle, t.form]));
 
   const active = s.active ? `
-    <button class="card active-card" data-action="go" data-href="#/active">
+    <div class="card active-card" data-action="go" data-href="#/active" role="button" tabindex="0">
       <div class="pulse"></div>
       <div class="li-main"><div class="li-title">Training bezig: ${esc(s.active.name)}</div>
       <div class="li-sub" data-elapsed="${s.active.startedAt}">${fmtElapsed(Date.now() - s.active.startedAt)}</div></div>
+      <button class="icon-btn icon-btn-sm danger" data-action="wo-cancel" aria-label="Training annuleren">${icon('x')}</button>
       <span class="btn btn-primary btn-sm">Verder</span>
-    </button>` : '';
+    </div>` : '';
 
   const cards = s.templates.map((t) => {
     const last = templateLastPerformed(t.id);
