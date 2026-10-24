@@ -20,6 +20,7 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
 | [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) | Stappenplan voor cloud-database (Supabase) + hosting voor de telefoon |
 | [docs/USER_PROFILE.md](docs/USER_PROFILE.md) | Wat we weten over de gebruiker en zijn huidige schema |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Volgende stappen en ideeën |
+| [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) | FireRed-stijl, monsters per spiergroep, XP-regels en levelcurve |
 
 ## Tech stack
 - **Geen build-stap**: vanilla JavaScript (ES modules), HTML, CSS. Openen = draaien.
@@ -45,7 +46,9 @@ js/stats.js           weekstatistieken, volume, streaks, records
 js/charts.js          barChart / lineChart (SVG)
 js/ui.js              helpers: escape, formatters, iconen, sheets (bottom sheets), toast, actions-registry
 js/exercise-library.js standaard oefeningen (naam, equipment, spiergroep, lower-body flag)
-js/views/*.js         schermen: home(templates), active (training), history, profile, body, exercises
+js/game/xp.js         monster-XP (afgeleid uit historie), levels, evoluties
+js/game/monsters.js   18 originele pixel-monsters (24×24 grids → SVG)
+js/views/*.js         schermen: home(templates), active (training), history, profile (+team), team, body, exercises
 server.js             statische dev-server zonder dependencies
 sw.js                 service worker
 ```
@@ -59,6 +62,8 @@ sw.js                 service worker
 - Escape altijd gebruikersinvoer met `esc()` in templates.
 - Gewichten in kg, getallen met punt (21.25). Invoer accepteert ook komma.
 - Mobiel eerst: touch targets ≥ 44px, `inputmode` op numerieke velden, safe-area insets.
+- Stijl = Pokémon FireRed (GBA): pixelfonts, witte panelen met pixelrand, geen officiële Pokémon-assets of
+  -namen (de site is publiek). XP nooit opslaan, altijd afleiden (`js/game/xp.js`).
 
 ## Draaien
 ```bash

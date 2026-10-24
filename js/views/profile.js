@@ -4,6 +4,7 @@ import { barChart, lineChart } from '../charts.js';
 import { workingSets } from '../progression.js';
 import { weeklyStats, weekStreak, bestE1rm, exerciseRecords, trainedExercises, setVolume } from '../stats.js';
 import { REST_OPTIONS, restLabel } from './templates.js';
+import { renderParty } from './team.js';
 import { syncInfo, statusText, signIn, signUp, resetPassword, setNewPassword, syncNow, logout } from '../sync.js';
 
 let selEx = null;
@@ -49,17 +50,13 @@ export function renderProfile() {
       <span class="pr-val">${fmtNum(r.e1rm.value, 1)}<small> kg</small></span></button>`;
   }).join('');
 
-  const name = s.profile.name || 'Atleet';
   return `
     <header class="page-head">
-      <h1>Profiel</h1>
+      <h1>Team</h1>
       <button class="icon-btn accent" data-action="go" data-href="#/settings" aria-label="Instellingen">${icon('gear')}</button>
     </header>
-    <section class="profile-card">
-      <div class="avatar">${esc(name[0].toUpperCase())}</div>
-      <div><div class="profile-name">${esc(name)}</div><div class="muted">${s.workouts.length} trainingen</div>
-      <div class="muted small sync-line" data-sync-status>${esc(statusText())}</div></div>
-    </section>
+    ${renderParty()}
+    <div class="muted small sync-line" data-sync-status>${esc(statusText())}</div>
 
     <section class="stat-grid stat-grid-3">
       <div class="stat"><div class="stat-label">Deze week</div><div class="stat-val">${thisWeek.count}<small>/${goal}</small></div></div>

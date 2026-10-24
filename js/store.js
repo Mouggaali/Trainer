@@ -44,7 +44,7 @@ function defaults() {
   return {
     version: VERSION,
     modifiedAt: 0,
-    profile: { name: '' },
+    profile: { name: '', monsterNames: {} },
     settings: { weeklyGoal: 3, defaultRest: 120, autoApply: true, sound: true },
     customExercises: [],
     exerciseOverrides: {},

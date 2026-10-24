@@ -3,6 +3,8 @@ import { esc, on, go, icon, relDays, sheetPromise, choose, confirmDialog, toast,
 import { recommend } from '../progression.js';
 import { trainedDaysThisWeek } from '../stats.js';
 import { pickExercise } from './exercises.js';
+import { computeTeam, TEAM } from '../game/xp.js';
+import { monsterSprite } from '../game/monsters.js';
 import { startWorkout } from './active.js';
 
 const DAYS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
@@ -22,6 +24,7 @@ export function renderHome() {
   const today = (new Date().getDay() + 6) % 7;
   const goal = s.settings.weeklyGoal;
   const nextId = nextTemplateId();
+  const forms = Object.fromEntries(computeTeam(s).team.map((t) => [t.muscle, t.form]));
 
   const active = s.active ? `
     <button class="card active-card" data-action="go" data-href="#/active">
@@ -39,6 +42,7 @@ export function renderHome() {
           <button class="icon-btn icon-btn-sm" data-action="tpl-menu" data-id="${t.id}" aria-label="Opties">${icon('more')}</button></div>
         ${t.id === nextId ? '<span class="next-badge">Volgende</span>' : ''}
         <p class="tpl-list">${t.exercises.map((e) => esc(getExercise(e.exerciseId).name)).join(', ') || '<em>Leeg</em>'}</p>
+        <div class="tpl-team">${[...new Set(t.exercises.map((e) => getExercise(e.exerciseId).muscle))].filter((m) => TEAM.includes(m)).map((m) => monsterSprite(m, forms[m], 28, 'sprite')).join('')}</div>
         <div class="tpl-foot">${icon('history')} ${last ? relDays(last) : 'Nog niet gedaan'}</div>
       </div>`;
   }).join('');

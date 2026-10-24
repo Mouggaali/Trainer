@@ -1,6 +1,7 @@
-// Tiny dependency-free SVG charts.
+// Tiny dependency-free SVG charts, pixel style (square bars, chunky lines, square dots).
+// All colours come from CSS classes (.ch-*) in css/styles.css.
 const W = 340;
-let gid = 0;
+const px = (v) => Math.round(v);
 
 function niceTicks(min, max, count = 4) {
   const span = max - min || 1;
@@ -25,22 +26,23 @@ export function barChart({ labels, values, goal = 0, height = 180, highlight = -
   const max = Math.max(goal, ...values, 1);
   const y = (v) => padT + ih - (v / max) * ih;
   const slot = iw / values.length;
-  const bw = Math.min(24, slot * 0.55);
+  const bw = px(Math.min(24, slot * 0.55));
   const stepTick = max <= 6 ? 1 : Math.ceil(max / 4);
   let grid = '';
   for (let v = 0; v <= max; v += stepTick) {
-    grid += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" class="ch-grid"/>`;
+    grid += `<line x1="${padL}" x2="${W - padR}" y1="${px(y(v))}" y2="${px(y(v))}" class="${v ? 'ch-grid' : 'ch-axis'}"/>`;
   }
   const bars = values.map((v, i) => {
-    const x = padL + i * slot + (slot - bw) / 2;
-    const h = Math.max(v ? 3 : 0, ih - (y(v) - padT));
+    const x = px(padL + i * slot + (slot - bw) / 2);
+    const h = px(Math.max(v ? 4 : 0, ih - (y(v) - padT)));
     const cls = i === highlight ? 'ch-bar ch-bar-hi' : 'ch-bar';
-    return `<rect x="${x}" y="${padT + ih - h}" width="${bw}" height="${h}" rx="5" class="${cls}"/>
+    const top = h > 6 ? `<rect x="${x + 2}" y="${padT + ih - h + 2}" width="${bw - 4}" height="3" class="ch-bar-top"/>` : '';
+    return `${h ? `<rect x="${x}" y="${padT + ih - h}" width="${bw}" height="${h}" class="${cls}"/>${top}` : ''}
       <text x="${x + bw / 2}" y="${height - 6}" class="ch-label" text-anchor="middle">${labels[i]}</text>`;
   }).join('');
   const goalLine = goal
-    ? `<line x1="${padL}" x2="${W - padR}" y1="${y(goal)}" y2="${y(goal)}" class="ch-goal"/>
-       <text x="${W - padR + 6}" y="${y(goal) + 4}" class="ch-goal-label">${goal}</text>`
+    ? `<line x1="${padL}" x2="${W - padR}" y1="${px(y(goal))}" y2="${px(y(goal))}" class="ch-goal"/>
+       <text x="${W - padR + 6}" y="${px(y(goal)) + 5}" class="ch-goal-label">${goal}</text>`
     : '';
   return `<svg class="chart" viewBox="0 0 ${W} ${height}" role="img">${grid}${bars}${goalLine}
     <text x="${W - padR + 6}" y="${padT + ih + 4}" class="ch-label">0</text></svg>`;
@@ -60,25 +62,29 @@ export function lineChart({ series, height = 190, unit = '' }) {
   const x = (v) => padL + ((v - xmin) / (xmax - xmin)) * iw;
   const y = (v) => padT + ih - ((v - lo) / (hi - lo || 1)) * ih;
 
-  const grid = ticks.map((t) => `<line x1="${padL}" x2="${W - padR}" y1="${y(t)}" y2="${y(t)}" class="ch-grid"/>
-    <text x="${padL - 6}" y="${y(t) + 4}" class="ch-label" text-anchor="end">${t}</text>`).join('');
+  const grid = ticks.map((t) => `<line x1="${padL}" x2="${W - padR}" y1="${px(y(t))}" y2="${px(y(t))}" class="ch-grid"/>
+    <text x="${padL - 6}" y="${px(y(t)) + 5}" class="ch-label" text-anchor="end">${t}</text>`).join('')
+    + `<line x1="${padL}" x2="${W - padR}" y1="${padT + ih}" y2="${padT + ih}" class="ch-axis"/>`;
 
-  const id = `g${++gid}`;
   const lines = series.map((s, si) => {
     const sorted = [...s.points].sort((a, b) => a.x - b.x);
     if (!sorted.length) return '';
-    const d = sorted.map((p, i) => `${i ? 'L' : 'M'}${x(p.x).toFixed(1)},${y(p.y).toFixed(1)}`).join('');
+    const d = sorted.map((p, i) => `${i ? 'L' : 'M'}${px(x(p.x))},${px(y(p.y))}`).join('');
     const area = si === 0 && sorted.length > 1
-      ? `<path d="${d}L${x(sorted.at(-1).x).toFixed(1)},${padT + ih}L${x(sorted[0].x).toFixed(1)},${padT + ih}Z" fill="url(#${id})"/>`
+      ? `<path d="${d}L${px(x(sorted.at(-1).x))},${padT + ih}L${px(x(sorted[0].x))},${padT + ih}Z" class="ch-area"/>`
       : '';
-    const dots = sorted.map((p, i) => `<circle cx="${x(p.x)}" cy="${y(p.y)}" r="${i === sorted.length - 1 ? 4.5 : 3}" class="ch-dot ${s.cls || ''}"/>`).join('');
+    const dots = sorted.map((p, i) => {
+      const last = i === sorted.length - 1;
+      const r = last ? 5 : 4;
+      return `<rect x="${px(x(p.x)) - r}" y="${px(y(p.y)) - r}" width="${r * 2}" height="${r * 2}" class="ch-dot ${last ? 'last ' : ''}${s.cls || ''}"/>`;
+    }).join('');
     return `${area}<path d="${d}" class="ch-line ${s.cls || ''}"/>${dots}`;
   }).join('');
 
   const xs = [...new Set(pts.map((p) => p.x))].sort((a, b) => a - b);
   const xl = [xs[0], xs.length > 2 ? xs[Math.floor(xs.length / 2)] : null, xs.length > 1 ? xs.at(-1) : null]
     .filter((v) => v != null)
-    .map((v, i, arr) => `<text x="${x(v)}" y="${height - 6}" class="ch-label" text-anchor="${i === 0 && arr.length > 1 ? 'start' : i === arr.length - 1 && arr.length > 1 ? 'end' : 'middle'}">${shortDate(v)}</text>`)
+    .map((v, i, arr) => `<text x="${px(x(v))}" y="${height - 6}" class="ch-label" text-anchor="${i === 0 && arr.length > 1 ? 'start' : i === arr.length - 1 && arr.length > 1 ? 'end' : 'middle'}">${shortDate(v)}</text>`)
     .join('');
 
   const legend = series.length > 1
@@ -86,8 +92,5 @@ export function lineChart({ series, height = 190, unit = '' }) {
     : '';
 
   return `<svg class="chart" viewBox="0 0 ${W} ${height}" role="img" aria-label="${unit}">
-    <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="var(--accent)" stop-opacity=".35"/>
-      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
     ${grid}${lines}${xl}</svg>${legend}`;
 }

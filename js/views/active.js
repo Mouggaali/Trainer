@@ -1,5 +1,8 @@
 import { getState, update, uid, getExercise, exerciseSessions } from '../store.js';
-import { esc, on, go, icon, fmtNum, fmtElapsed, fmtDate, fmtDuration, fmtVolume, choose, sheetPromise, toast, num, unlockAudio, setLabel } from '../ui.js';
+import { esc, on, go, icon, fmtNum, fmtElapsed, fmtDate, fmtDuration, fmtVolume, choose, sheetPromise, toast, num, unlockAudio, setLabel, xpPop, sfx, dialogSequence } from '../ui.js';
+import { setXpPreview, workoutGains, XP } from '../game/xp.js';
+import { monsterSprite, monsterName } from '../game/monsters.js';
+import { expBar, pct } from './team.js';
 import { recommend } from '../progression.js';
 import { bestE1rm, workoutVolume, workoutSetCount } from '../stats.js';
 import { pickExercise, plannedSetsFor } from './exercises.js';
@@ -196,7 +199,57 @@ async function finishWorkout() {
   showSummary(w);
 }
 
+/** FireRed-style EXP / level-up / evolution sequence after a workout. */
+async function playGains(w) {
+  const g = workoutGains(w.id);
+  if (!g || !g.monsters.length) return;
+  const nicks = getState().profile.monsterNames || {};
+  const sound = getState().settings.sound;
+  const stage = (m, form, lvl, into, needed, extra = '') => `
+    <div class="gain-card ${extra}">
+      <div class="gain-sprite">${monsterSprite(m, form, 128, 'sprite')}</div>
+      <div class="gain-info"><div class="row-between"><b>${esc(monsterName(m, form, nicks))}</b><b>Lv${lvl}</b></div>
+      ${expBar(into, needed)}</div>
+    </div>`;
+  const steps = [];
+  if (g.weekGoal) {
+    steps.push({ text: `Weekdoel gehaald! Je hele team krijgt ${XP.weekGoal} EXP. extra!`, stage: '<div class="gain-banner">★ WEEKDOEL ★</div>', onShow: () => sound && sfx('levelup') });
+  }
+  for (const r of g.monsters) {
+    const { before: b, after: a } = r;
+    const name = monsterName(r.muscle, b.form, nicks);
+    steps.push({
+      text: `${name} kreeg ${r.gained} EXP. punten!`,
+      stage: stage(r.muscle, b.form, b.level, b.into, b.needed),
+      onShow: (el) => {
+        const bar = el.querySelector('.exp-bar > i');
+        if (!bar) return;
+        bar.style.width = r.leveledUp ? '100%' : `${pct(a.into, a.needed)}%`;
+        if (sound) sfx('xp');
+      },
+    });
+    if (r.leveledUp) {
+      steps.push({
+        text: `${name} is gegroeid naar Lv${a.level}!`,
+        stage: stage(r.muscle, b.form, a.level, a.into, a.needed),
+        onShow: () => sound && sfx('levelup'),
+      });
+    }
+    if (r.evolved) {
+      const newName = monsterName(r.muscle, a.form, nicks);
+      steps.push({ text: `Wat? ${name} evolueert!`, stage: stage(r.muscle, b.form, a.level, a.into, a.needed, 'evolving') });
+      steps.push({
+        text: `Gefeliciteerd! ${name} is geëvolueerd tot ${newName}!`,
+        stage: `<div class="evolve-flash"></div>${stage(r.muscle, a.form, a.level, a.into, a.needed)}`,
+        onShow: () => sound && sfx('evolve'),
+      });
+    }
+  }
+  await dialogSequence(steps);
+}
+
 async function showSummary(w) {
+  await playGains(w);
   const prs = w.prs.map((id) => `<li>${icon('trophy')} ${esc(getExercise(id).name)} <span class="muted">· ${fmtNum(bestE1rm(w.exercises.find((e) => e.exerciseId === id).sets), 1)} kg e1RM</span></li>`).join('');
   const { result } = sheetPromise(`
     <div class="summary">
@@ -234,6 +287,7 @@ on({
     const a = getState().active;
     const we = a.exercises[ex];
     const st = we.sets[set];
+    const rect = el.getBoundingClientRect();
     if (!st.done) {
       const prev = exerciseSessions(we.exerciseId).find((x) => x.workoutId !== a.id)?.sets[set];
       const reps = st.reps ?? prev?.reps ?? st.target?.reps;
@@ -246,6 +300,13 @@ on({
         s.active.rest = we.restSec > 0 ? { endsAt: Date.now() + we.restSec * 1000, total: we.restSec } : null;
       });
       if (navigator.vibrate) navigator.vibrate(30);
+      if (!st.warmup) {
+        const p = setXpPreview(we.exerciseId);
+        if (p) {
+          xpPop(rect, p.capped ? 'MAX deze week' : `+${p.xp} EXP.`);
+          if (p.xp && getState().settings.sound) sfx('xp');
+        }
+      }
     } else {
       update((s) => { s.active.exercises[ex].sets[set].done = false; });
     }

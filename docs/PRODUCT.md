@@ -26,10 +26,15 @@ Start Workout/Templates, template-preview "Maandag", actieve training).
 - Lichaamsmaten links/rechts met verschil t.o.v. vorige meting.
 - Records (PR's) automatisch gedetecteerd na elke training.
 
+## Gamification (okt 2026)
+Hele app in Pokémon FireRed-stijl. Elke spiergroep heeft een eigen origineel monster dat EXP krijgt voor
+sets, gehaalde oefeningen, trainingen, PR's en het weekdoel, levelt en evolueert op Lv16/36.
+Details: GAME_DESIGN.md.
+
 ## Schermen (tabbar)
 | Tab | Inhoud |
 |---|---|
-| Profiel | Stats, trainingen per week (chart + weekdoel), progressie per oefening, records, instellingen |
+| Team (was Profiel) | Trainerkaart + party van 6 monsters, stats, trainingen per week (chart + weekdoel), progressie per oefening, records, instellingen |
 | Geschiedenis | Afgeronde trainingen per maand, detail, opslaan als template, verwijderen |
 | Training | Weekstrip, lege training starten, templates (preview → starten / bewerken) |
 | Oefeningen | Bibliotheek + eigen oefeningen, detail met chart, records en volgend advies |

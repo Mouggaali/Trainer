@@ -114,6 +114,7 @@ export async function editExercise(id = null) {
       <label>Naam<input name="name" value="${esc(ex.name)}" placeholder="bv. Cable Fly (Cable)" required></label>
       <label>Equipment<select name="equipment">${Object.entries(EQUIPMENT).map(([k, v]) => `<option value="${k}" ${k === ex.equipment ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
       <label>Spiergroep<select name="muscle">${MUSCLES.map((m) => `<option ${m === ex.muscle ? 'selected' : ''}>${m}</option>`).join('')}</select></label>
+      <label>Hulpspiergroep <span class="muted small">— krijgt halve EXP.</span><select name="secondary"><option value="">Geen</option>${MUSCLES.filter((m) => m !== 'Overig').map((m) => `<option ${m === ex.secondary ? 'selected' : ''}>${m}</option>`).join('')}</select></label>
       <label class="check-row"><input type="checkbox" name="lower" ${ex.lower ? 'checked' : ''}> Onderlichaam / hinge (grotere stappen)</label>
       <label>Eigen gewichtsstap (kg) <span class="muted small">— leeg = automatisch</span><input name="increment" inputmode="decimal" value="${fmtNum(ex.increment)}" placeholder="auto"></label>
       <div class="sheet-actions">
@@ -151,6 +152,7 @@ on({
       name,
       equipment: f.get('equipment'),
       muscle: f.get('muscle'),
+      secondary: f.get('secondary') || undefined,
       lower: f.get('lower') === 'on',
       increment: num(f.get('increment')) || undefined,
     };

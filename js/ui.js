@@ -194,3 +194,84 @@ export function beep() {
     o.start(st); o.stop(st + 0.2);
   });
 }
+
+// ---------- Game sounds (original chiptune blips, square wave) ----------
+function tone(freq, start, dur, type = 'square', vol = 0.12) {
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  o.connect(g); g.connect(audioCtx.destination);
+  const st = audioCtx.currentTime + start;
+  g.gain.setValueAtTime(vol, st);
+  g.gain.exponentialRampToValueAtTime(0.0001, st + dur);
+  o.start(st); o.stop(st + dur + 0.02);
+}
+const SFX = {
+  blip: [[988, 0, 0.06]],
+  xp: [[784, 0, 0.05], [1175, 0.05, 0.08]],
+  levelup: [[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.25], [784, 0.55, 0.08], [1047, 0.63, 0.35]],
+  evolve: [[392, 0, 0.12], [523, 0.15, 0.12], [659, 0.3, 0.12], [784, 0.45, 0.12], [1047, 0.6, 0.12], [1319, 0.75, 0.4]],
+};
+/** Plays a game sound. Callers decide whether sound is enabled (settings.sound). */
+export function sfx(name) {
+  if (!audioCtx) return;
+  try { (SFX[name] || []).forEach(([f, s, d]) => tone(f, s, d)); } catch { /* ignore */ }
+}
+
+// ---------- XP pop-up ----------
+/** Floating "+10 EXP" text rising from a screen rect (DOMRect of the tapped element). */
+export function xpPop(rect, text) {
+  const el = document.createElement('div');
+  el.className = 'xp-pop';
+  el.style.position = 'fixed';
+  el.textContent = text;
+  el.style.left = `${rect.left + rect.width / 2}px`;
+  el.style.top = `${rect.top}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ---------- FireRed dialog sequence ----------
+/**
+ * Shows a full-screen sequence of dialog steps; tap advances (tap while typing completes the line).
+ * step: { text, stage?: html (replaces the stage above the box), onShow?(stageEl) }
+ * Resolves when all steps are shown or "Overslaan" is tapped.
+ */
+export function dialogSequence(steps) {
+  return new Promise((resolve) => {
+    const root = document.createElement('div');
+    root.className = 'dialog-overlay';
+    root.innerHTML = `<button class="dialog-skip">Overslaan</button><div class="dialog-stage"></div>
+      <div class="dialog-box"><p class="dialog-text"></p><i class="dialog-next"></i></div>`;
+    document.body.appendChild(root);
+    const stage = root.querySelector('.dialog-stage');
+    const textEl = root.querySelector('.dialog-text');
+    let i = -1, typing = null, full = '';
+
+    const finish = () => { clearInterval(typing); root.remove(); resolve(); };
+    const show = () => {
+      i++;
+      if (i >= steps.length) return finish();
+      const step = steps[i];
+      if (step.stage != null) stage.innerHTML = step.stage;
+      full = step.text;
+      textEl.textContent = '';
+      root.classList.add('is-typing');
+      let n = 0;
+      clearInterval(typing);
+      typing = setInterval(() => {
+        n++;
+        textEl.textContent = full.slice(0, n);
+        if (n >= full.length) { clearInterval(typing); typing = null; root.classList.remove('is-typing'); }
+      }, 22);
+      requestAnimationFrame(() => step.onShow?.(stage));
+    };
+    root.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (e.target.closest('.dialog-skip')) return finish();
+      if (typing) { clearInterval(typing); typing = null; textEl.textContent = full; root.classList.remove('is-typing'); return; }
+      show();
+    });
+    show();
+  });
+}

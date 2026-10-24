@@ -6,6 +6,7 @@ import { renderHistory, renderWorkoutDetail } from './views/history.js';
 import { renderProfile, renderSettings } from './views/profile.js';
 import { renderExercises, mountExercises, renderExerciseDetail } from './views/exercises.js';
 import { renderBody, renderMeasureForm } from './views/body.js';
+import { renderMonsterDetail } from './views/team.js';
 import { initSync, onSyncChange, statusText } from './sync.js';
 
 const routes = {
@@ -17,12 +18,13 @@ const routes = {
   settings: { render: renderSettings, tab: 'profile' },
   exercises: { render: (id) => renderExercises(id), mount: mountExercises, tab: 'exercises' },
   exercise: { render: renderExerciseDetail, tab: 'exercises' },
+  monster: { render: renderMonsterDetail, tab: 'profile' },
   body: { render: renderBody, tab: 'body' },
   measure: { render: renderMeasureForm, tab: 'body' },
 };
 
 const TABS = [
-  { id: 'profile', label: 'Profiel', icon: 'user', href: '#/profile' },
+  { id: 'profile', label: 'Team', icon: 'user', href: '#/profile' },
   { id: 'history', label: 'Historie', icon: 'history', href: '#/history' },
   { id: 'workout', label: 'Training', icon: 'plus', href: '#/workout' },
   { id: 'exercises', label: 'Oefeningen', icon: 'dumbbell', href: '#/exercises' },
