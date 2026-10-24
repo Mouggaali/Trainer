@@ -30,6 +30,9 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
   `tools/build-config.js` maakt `js/config.js` uit `.env` (lokaal) of uit repo secrets (GitHub Actions).
 - **Login verplicht**: `gateState()` (`js/sync.js`) bepaalt in `render()` of de app of het inlogscherm
   (`js/views/login.js`) getoond wordt; opgeslagen sessie = app open (ook offline). Uitloggen wist lokale data.
+- **Pushmeldingen** (einde rust): `js/push.js` schrijft `rest_timers`; pg_cron + Edge Function
+  `supabase/functions/send-rest-push` versturen Web Push; `sw.js` toont hem. Setup: DATABASE_SETUP.md.
+  Geheimen (`supabase/functions/.env`, `supabase/*.local.sql`) zijn gitignored.
 - **Hosting**: GitHub Pages via `.github/workflows/deploy.yml` → https://mouggaali.github.io/Trainer/
 - **PWA**: `manifest.webmanifest` + `sw.js` (network-first) → installeerbaar op het beginscherm.
 - **Charts**: eigen kleine SVG-charts in `js/charts.js` (geen libraries).
@@ -42,6 +45,7 @@ css/styles.css        alle styling (dark theme, mobile-first)
 js/app.js             router (hash), event-delegatie, ticker (rusttimer/klok), tabbar
 js/store.js           state, opslag, seed-data, queries (exerciseSessions, allExercises, ...)
 js/sync.js            Supabase login (e-mail + wachtwoord) + push/pull van de state
+js/push.js            Web Push: abonnement + rest_timers plannen/verplaatsen/annuleren
 js/config.js          GEGENEREERD, gitignored (Supabase URL + publishable key)
 js/progression.js     gewichtsadvies-algoritme + e1RM
 js/stats.js           weekstatistieken, volume, streaks, records

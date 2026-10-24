@@ -7,6 +7,7 @@ import { recommend } from '../progression.js';
 import { bestE1rm, workoutVolume, workoutSetCount } from '../stats.js';
 import { pickExercise, plannedSetsFor } from './exercises.js';
 import { pickRest, restLabel } from './templates.js';
+import { scheduleRestPush, moveRestPush, cancelRestPush } from '../push.js';
 
 function buildExercise(exerciseId, planned, restSec) {
   const s = getState();
@@ -39,6 +40,14 @@ export function nextSet(a, fromEx = 0) {
     };
   }
   return null;
+}
+
+/** Notification text for the end of a rest: the next set to do. */
+export function restPushText(a, fromEx) {
+  const n = nextSet(a, fromEx);
+  if (!n) return { title: 'Rust voorbij! 💪', body: 'Alle sets gedaan. Tik op Klaar om je training af te ronden.' };
+  const load = `${n.kg != null ? `${fmtNum(n.kg)} kg × ` : ''}${n.reps ?? '–'}`;
+  return { title: 'Rust voorbij! 💪', body: `Volgende: ${n.name} · ${load} · ${n.label}` };
 }
 
 export async function startWorkout(templateId) {
@@ -161,7 +170,7 @@ async function finishWorkout() {
       { label: 'Training annuleren', value: 'cancel', style: 'btn-danger' },
       { label: 'Terug naar training', value: '' },
     ]);
-    if (v === 'cancel') { update((s) => { s.active = null; }); go('#/workout'); }
+    if (v === 'cancel') { cancelRestPush(); update((s) => { s.active = null; }); go('#/workout'); }
     return;
   }
   let mode = 'drop';
@@ -190,6 +199,7 @@ async function finishWorkout() {
   }).map((e) => e.exerciseId);
   w.prs = prs;
 
+  cancelRestPush();
   update((s) => { s.workouts.push(w); s.active = null; });
 
   const tpl = w.templateId && getState().templates.find((t) => t.id === w.templateId);
@@ -322,6 +332,8 @@ on({
         s.active.rest = we.restSec > 0 ? { endsAt: Date.now() + we.restSec * 1000, total: we.restSec, ex } : null;
       });
       if (navigator.vibrate) navigator.vibrate(30);
+      const rest = getState().active.rest;
+      if (rest) { const t = restPushText(getState().active, ex); scheduleRestPush(rest.endsAt, t.title, t.body); }
       if (!st.warmup) {
         const p = setXpPreview(we.exerciseId);
         if (p) {
@@ -402,15 +414,19 @@ on({
       { label: 'Ja, annuleren', value: 'yes', style: 'btn-danger' },
       { label: 'Doorgaan met trainen', value: '' },
     ]);
-    if (v === 'yes') { update((s) => { s.active = null; }); toast('Training geannuleerd'); go('#/workout'); }
+    if (v === 'yes') { cancelRestPush(); update((s) => { s.active = null; }); toast('Training geannuleerd'); go('#/workout'); }
   },
-  'rest-adj': (el) => update((s) => {
-    const r = s.active?.rest;
-    if (!r) return;
-    const d = Number(el.dataset.d);
-    r.endsAt += d * 1000;
-    r.total = Math.max(1, r.total + d);
-    if (r.endsAt <= Date.now()) s.active.rest = null;
-  }),
-  'rest-skip': () => update((s) => { if (s.active) s.active.rest = null; }),
+  'rest-adj': (el) => {
+    update((s) => {
+      const r = s.active?.rest;
+      if (!r) return;
+      const d = Number(el.dataset.d);
+      r.endsAt += d * 1000;
+      r.total = Math.max(1, r.total + d);
+      if (r.endsAt <= Date.now()) s.active.rest = null;
+    });
+    const r = getState().active?.rest;
+    if (r) moveRestPush(r.endsAt); else cancelRestPush();
+  },
+  'rest-skip': () => { cancelRestPush(); update((s) => { if (s.active) s.active.rest = null; }); },
 });

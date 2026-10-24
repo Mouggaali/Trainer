@@ -2,8 +2,9 @@ import { getState, update, subscribe } from './store.js';
 import { actions, on, setRerender, icon, esc, fmtClock, fmtElapsed, fmtNum, beep, toast, closeSheet } from './ui.js';
 import { renderHome, renderTemplateEditor } from './views/templates.js';
 import { renderActive, nextSet } from './views/active.js';
+import { cancelRestPush } from './push.js';
 import { renderHistory, renderWorkoutDetail } from './views/history.js';
-import { renderProfile, renderSettings } from './views/profile.js';
+import { renderProfile, renderSettings, mountSettings } from './views/profile.js';
 import { renderExercises, mountExercises, renderExerciseDetail } from './views/exercises.js';
 import { renderBody, renderMeasureForm } from './views/body.js';
 import { renderMonsterDetail } from './views/team.js';
@@ -16,7 +17,7 @@ const routes = {
   template: { render: renderTemplateEditor, tab: 'workout' },
   history: { render: (id) => (id ? renderWorkoutDetail(id) : renderHistory()), tab: 'history' },
   profile: { render: renderProfile, tab: 'profile' },
-  settings: { render: renderSettings, tab: 'profile' },
+  settings: { render: renderSettings, mount: mountSettings, tab: 'profile' },
   exercises: { render: (id) => renderExercises(id), mount: mountExercises, tab: 'exercises' },
   exercise: { render: renderExerciseDetail, tab: 'exercises' },
   monster: { render: renderMonsterDetail, tab: 'profile' },
@@ -132,6 +133,11 @@ function tick() {
   const r = a?.rest;
   if (!r) return;
   const left = (r.endsAt - now) / 1000;
+  // App is visible at the end of the rest (screen on): cancel the lock-screen push to avoid a double alert.
+  if (left <= 3 && !document.hidden && !r.pushCancelled) {
+    r.pushCancelled = true;
+    cancelRestPush();
+  }
   if (left <= 0) {
     update((s) => { s.active.rest = null; }, { silent: true });
     renderRestBar();

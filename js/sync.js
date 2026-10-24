@@ -242,3 +242,7 @@ export async function logout() {
 }
 
 export const isOnlineCapable = () => !!sb;
+
+/** Supabase client + signed-in user for other modules (push). null when unavailable. */
+export const getClient = () => sb;
+export const currentUser = () => user;

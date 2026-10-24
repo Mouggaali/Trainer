@@ -78,3 +78,19 @@ Daarna op je iPhone: open de link in Safari → Deel → **Zet op beginscherm**.
    Redirect URLs `https://mouggaali.github.io/Trainer/**` en `http://localhost:5173/**`.
 4. ~~Mailtemplates aanpassen~~ — niet meer nodig (wachtwoord-login).
 5. Optioneel, na je eerste login: Authentication → Sign In / Providers → "Allow new users to sign up" uit.
+
+## Pushmeldingen bij einde rust (okt 2026)
+Architectuur: app schrijft de lopende rust naar `public.rest_timers` (één rij per gebruiker, RLS) →
+pg_cron (elke 5 s) roept alleen bij een verlopen timer de Edge Function `send-rest-push` aan (URL + geheim uit
+Vault) → die stuurt Web Push (VAPID) naar `public.push_subscriptions` → `sw.js` toont de melding.
+Is de app zichtbaar aan het eind van de rust, dan annuleert de app de melding 3 s vooraf (geen dubbele melding).
+
+Eenmalige setup:
+1. `node tools/make-vapid.js` → `.env` (VAPID_PUBLIC_KEY), `supabase/functions/.env` en
+   `supabase/push_secrets.local.sql` (beide gitignored, geheim).
+2. Supabase SQL Editor: `supabase/push.sql`, daarna `supabase/push_secrets.local.sql`.
+3. `npx supabase login`, dan
+   `npx supabase functions deploy send-rest-push --project-ref holyuoqbiwhkszxkxuhh --no-verify-jwt` en
+   `npx supabase secrets set --env-file supabase/functions/.env --project-ref holyuoqbiwhkszxkxuhh`.
+4. GitHub repo secret `VAPID_PUBLIC_KEY` (waarde uit `.env`).
+5. iPhone: app vanaf beginscherm → Instellingen → Meldingen aanzetten.

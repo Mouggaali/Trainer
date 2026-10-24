@@ -41,3 +41,27 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
   );
 });
+
+// Web Push: "rest is over" (sent by the send-rest-push Edge Function).
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data?.text() }; }
+  e.waitUntil(self.registration.showNotification(data.title || 'Rust voorbij! 💪', {
+    body: data.body || 'Tijd voor je volgende set.',
+    tag: data.tag || 'rest',
+    renotify: true,
+    icon: 'icons/icon-192.png',
+    badge: 'icons/icon-192.png',
+    data: { url: data.url || './#/active' },
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL(e.notification.data?.url || './#/active', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    const win = list.find((c) => c.url.startsWith(self.registration.scope));
+    if (win) return win.focus().then(() => win.navigate?.(url));
+    return self.clients.openWindow(url);
+  }));
+});

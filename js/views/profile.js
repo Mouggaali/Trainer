@@ -5,6 +5,7 @@ import { workingSets } from '../progression.js';
 import { weeklyStats, weekStreak, bestE1rm, exerciseRecords, trainedExercises, setVolume } from '../stats.js';
 import { REST_OPTIONS, restLabel } from './templates.js';
 import { renderParty } from './team.js';
+import { pushStatus, enablePush, disablePush } from '../push.js';
 import { syncInfo, statusText, setNewPassword, syncNow, logout } from '../sync.js';
 
 let selEx = null;
@@ -101,6 +102,9 @@ export function renderSettings() {
 
     ${syncCard()}
 
+    <h2 class="section-title">Meldingen</h2>
+    <section class="card" id="push-card"><p class="muted small">Laden…</p></section>
+
     <h2 class="section-title">Data</h2>
     <section class="card">
       <p class="muted small">Je data staat altijd ook lokaal op dit apparaat, zodat de app offline werkt.
@@ -110,6 +114,27 @@ export function renderSettings() {
       <button class="btn btn-danger-soft btn-block" data-action="data-reset">${icon('trash')} Alle data wissen</button>
     </section>
     <p class="muted small center">Trainer v0.1</p>`;
+}
+
+const PUSH_TEXT = {
+  on: 'Aan. Je krijgt een melding op je vergrendelscherm zodra je rust voorbij is, met je volgende set.',
+  off: 'Krijg een melding op je vergrendelscherm zodra je rust voorbij is, met je volgende set erin.',
+  denied: 'Meldingen zijn geblokkeerd. Zet ze aan via iPhone-instellingen → Meldingen → Trainer.',
+  install: 'Zet de app eerst op je beginscherm (Safari → Deel → Zet op beginscherm) en open hem daar.',
+  unsupported: 'Deze browser ondersteunt geen pushmeldingen.',
+  unconfigured: 'Pushmeldingen zijn nog niet ingesteld.',
+};
+
+/** Fills the notifications card after render (status is async). */
+export async function mountSettings() {
+  const el = document.getElementById('push-card');
+  if (!el) return;
+  let st = 'unsupported';
+  try { st = await pushStatus(); } catch { /* keep unsupported */ }
+  el.innerHTML = `<div class="li-title">Melding als je rust voorbij is</div>
+    <p class="muted small">${PUSH_TEXT[st]}</p>
+    ${st === 'off' ? '<button class="btn btn-primary btn-block" data-action="push-on">Meldingen aanzetten</button>' : ''}
+    ${st === 'on' ? '<button class="btn btn-secondary btn-block" data-action="push-off">Meldingen uitzetten</button>' : ''}`;
 }
 
 function syncCard() {
@@ -146,6 +171,8 @@ on({
     toast('Nieuw wachtwoord opgeslagen');
   }),
   'sync-now': (el) => busy(el, syncNow),
+  'push-on': (el) => busy(el, async () => { await enablePush(); toast('Meldingen staan aan 🔔'); mountSettings(); }),
+  'push-off': (el) => busy(el, async () => { await disablePush(); toast('Meldingen staan uit'); mountSettings(); }),
   'sync-logout': async (el) => {
     if (!(await confirmDialog('Uitloggen?', 'Je data blijft veilig in de cloud en wordt van dit apparaat gewist. Log opnieuw in om alles terug te krijgen.', 'Uitloggen'))) return;
     busy(el, logout);

@@ -1,7 +1,7 @@
 # Deploys the app to GitHub Pages on every push to main.
 # js/config.js is generated here from repository secrets, so the key is never stored in the repo.
 # Required secrets (Settings → Secrets and variables → Actions):
-#   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
+#   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, VAPID_PUBLIC_KEY (optional: enables push notifications)
 name: Deploy to GitHub Pages
 
 on:
@@ -33,6 +33,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
         run: node tools/build-config.js
       - name: Collect site files
         run: |

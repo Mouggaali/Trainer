@@ -5,3 +5,5 @@ node_modules/
 Thumbs.db
 js/config.js
 _site/
+supabase/functions/.env
+supabase/*.local.sql
