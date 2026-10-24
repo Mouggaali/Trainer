@@ -96,6 +96,7 @@ export function renderSettings() {
         <select data-input="set-rest">${REST_OPTIONS.map((v) => `<option value="${v}" ${v === st.defaultRest ? 'selected' : ''}>${restLabel(v)}</option>`).join('')}</select></label>
       <label class="check-row"><input type="checkbox" data-input="set-auto" ${st.autoApply ? 'checked' : ''}> Gewichtsadvies automatisch invullen bij start</label>
       <label class="check-row"><input type="checkbox" data-input="set-sound" ${st.sound ? 'checked' : ''}> Geluid + trilling als de rust voorbij is</label>
+      <label class="check-row"><input type="checkbox" data-input="set-awake" ${st.keepAwake !== false ? 'checked' : ''}> Scherm aan houden tijdens een training</label>
     </section>
 
     ${syncCard()}
@@ -156,6 +157,7 @@ on({
   'set-rest': (el) => update((s) => { s.settings.defaultRest = Number(el.value); }),
   'set-auto': (el) => update((s) => { s.settings.autoApply = el.checked; }),
   'set-sound': (el) => update((s) => { s.settings.sound = el.checked; }),
+  'set-awake': (el) => update((s) => { s.settings.keepAwake = el.checked; }),
   'data-export': () => {
     const blob = new Blob([exportData()], { type: 'application/json' });
     const a = document.createElement('a');

@@ -22,6 +22,25 @@ function buildExercise(exerciseId, planned, restSec) {
   return { uid: uid(), exerciseId, restSec: restSec ?? s.settings.defaultRest, targetSets: planned.filter((p) => !p.warmup).length, sets, rec };
 }
 
+/** The next unchecked set after a rest: first in the exercise just trained, else the next exercise with open sets. */
+export function nextSet(a, fromEx = 0) {
+  const order = [...a.exercises.keys()].filter((i) => i >= fromEx).concat([...a.exercises.keys()].filter((i) => i < fromEx));
+  for (const ei of order) {
+    const we = a.exercises[ei];
+    const si = we.sets.findIndex((x) => !x.done);
+    if (si < 0) continue;
+    const st = we.sets[si];
+    const working = we.sets.filter((x) => !x.warmup);
+    return {
+      name: getExercise(we.exerciseId).name,
+      kg: st.kg,
+      reps: st.reps ?? st.target?.reps ?? null,
+      label: st.warmup ? 'Warming-up' : `Set ${working.indexOf(st) + 1} van ${working.length}`,
+    };
+  }
+  return null;
+}
+
 export async function startWorkout(templateId) {
   const s = getState();
   if (s.active) {
@@ -300,7 +319,7 @@ on({
         t.reps = reps;
         if (t.kg == null && prev?.kg) t.kg = prev.kg;
         t.done = true;
-        s.active.rest = we.restSec > 0 ? { endsAt: Date.now() + we.restSec * 1000, total: we.restSec } : null;
+        s.active.rest = we.restSec > 0 ? { endsAt: Date.now() + we.restSec * 1000, total: we.restSec, ex } : null;
       });
       if (navigator.vibrate) navigator.vibrate(30);
       if (!st.warmup) {

@@ -44,3 +44,5 @@ na 8 weken Borst/Benen ±Lv18, niet-getrainde groepen ±Lv8. Lv36 ≈ 6–7 maan
 - Na afronden: `dialogSequence` (FireRed-tekstvak): EXP per monster met animerende balk → level-up →
   evolutie → daarna de bestaande samenvatting. "Overslaan" slaat de reeks over.
 - Geluid (`sfx` in `js/ui.js`, eigen chiptune, respecteert `settings.sound`).
+- Rustbalk toont de volgende set (oefening · kg × reps · set x van y); scherm blijft aan tijdens een training
+  (Wake Lock, `settings.keepAwake`). Live Activities op het iOS-vergrendelscherm kunnen niet vanuit een web-app.

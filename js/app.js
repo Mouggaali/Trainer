@@ -1,7 +1,7 @@
 import { getState, update, subscribe } from './store.js';
-import { actions, on, setRerender, icon, esc, fmtClock, fmtElapsed, beep, toast, closeSheet } from './ui.js';
+import { actions, on, setRerender, icon, esc, fmtClock, fmtElapsed, fmtNum, beep, toast, closeSheet } from './ui.js';
 import { renderHome, renderTemplateEditor } from './views/templates.js';
-import { renderActive } from './views/active.js';
+import { renderActive, nextSet } from './views/active.js';
 import { renderHistory, renderWorkoutDetail } from './views/history.js';
 import { renderProfile, renderSettings } from './views/profile.js';
 import { renderExercises, mountExercises, renderExerciseDetail } from './views/exercises.js';
@@ -41,6 +41,30 @@ const view = document.getElementById('view');
 
 let lastGate = null;
 
+// Keep the screen awake during a workout so the rest timer and next set stay visible.
+let wakeLock = null;
+let wakePending = false;
+async function syncWakeLock() {
+  const s = getState();
+  const want = lastGate === 'open' && !!s.active && s.settings.keepAwake !== false && !document.hidden;
+  if (!('wakeLock' in navigator) || wakePending) return;
+  try {
+    if (want && !wakeLock) {
+      wakePending = true;
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!want && wakeLock) {
+      const w = wakeLock;
+      wakeLock = null;
+      await w.release();
+    }
+  } catch {
+    wakeLock = null; // e.g. low battery mode or not allowed
+  } finally {
+    wakePending = false;
+  }
+}
+
 function render() {
   lastGate = gateState();
   if (lastGate !== 'open') {
@@ -59,6 +83,7 @@ function render() {
   renderTabbar(r.tab);
   renderWorkoutBar(root);
   renderRestBar();
+  syncWakeLock();
 }
 
 function renderTabbar(tab) {
@@ -84,8 +109,12 @@ function renderRestBar() {
   const el = document.getElementById('rest-bar');
   document.body.classList.toggle('has-rest', !!r);
   if (!r) { el.innerHTML = ''; return; }
+  const n = nextSet(getState().active, r.ex ?? 0);
+  const next = n
+    ? `<div class="rest-next"><small>Volgende</small><b>${esc(n.name)}</b><span>${n.kg != null ? `${fmtNum(n.kg)} kg × ` : ''}${n.reps ?? '–'} reps · ${n.label}</span></div>`
+    : '<div class="rest-next"><small>Volgende</small><b>Alle sets gedaan!</b><span>Tik op Klaar om af te ronden</span></div>';
   el.innerHTML = `
-    <div class="rest">
+    <div class="rest rest-has-next">${next}
       <div class="rest-fill" data-rest-fill></div>
       <button class="rest-btn" data-action="rest-adj" data-d="-15">−15</button>
       <div class="rest-mid"><small>Rust</small><span data-rest-left>${fmtClock((r.endsAt - Date.now()) / 1000)}</span></div>
@@ -141,7 +170,7 @@ document.addEventListener('focusin', (e) => { if (e.target.matches('.set-input')
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
 
 window.addEventListener('hashchange', () => { closeSheet(); window.scrollTo(0, 0); render(); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); syncWakeLock(); });
 
 setRerender(render);
 subscribe(render);

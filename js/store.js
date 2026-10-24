@@ -45,7 +45,7 @@ function defaults() {
     version: VERSION,
     modifiedAt: 0,
     profile: { name: '', monsterNames: {} },
-    settings: { weeklyGoal: 3, defaultRest: 120, autoApply: true, sound: true },
+    settings: { weeklyGoal: 3, defaultRest: 120, autoApply: true, sound: true, keepAwake: true },
     customExercises: [],
     exerciseOverrides: {},
     templates: seedTemplates(),
