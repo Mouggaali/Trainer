@@ -181,19 +181,6 @@ export function unlockAudio() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
   } catch { /* no audio */ }
 }
-export function beep() {
-  if (!audioCtx) return;
-  [0, 0.22, 0.44].forEach((t) => {
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.frequency.value = t === 0.44 ? 1175 : 880;
-    o.connect(g); g.connect(audioCtx.destination);
-    const st = audioCtx.currentTime + t;
-    g.gain.setValueAtTime(0.0001, st);
-    g.gain.exponentialRampToValueAtTime(0.35, st + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, st + 0.18);
-    o.start(st); o.stop(st + 0.2);
-  });
-}
 
 // ---------- Game sounds (original chiptune blips, square wave) ----------
 function tone(freq, start, dur, type = 'square', vol = 0.12) {

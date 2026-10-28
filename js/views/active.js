@@ -7,6 +7,7 @@ import { recommend } from '../progression.js';
 import { bestE1rm, workoutVolume, workoutSetCount } from '../stats.js';
 import { pickExercise, plannedSetsFor } from './exercises.js';
 import { pickRest, restLabel } from './templates.js';
+import { unlockSound } from '../sound.js';
 import { scheduleRestPush, moveRestPush, cancelRestPush } from '../push.js';
 
 function buildExercise(exerciseId, planned, restSec) {
@@ -315,6 +316,7 @@ on({
   },
   'wo-check': (el) => {
     unlockAudio();
+    unlockSound();
     const { ex, set } = ix(el);
     const a = getState().active;
     const we = a.exercises[ex];

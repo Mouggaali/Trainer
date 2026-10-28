@@ -1,5 +1,6 @@
 import { getState, update, subscribe } from './store.js';
-import { actions, on, setRerender, icon, esc, fmtClock, fmtElapsed, fmtNum, beep, toast, closeSheet } from './ui.js';
+import { actions, on, setRerender, icon, esc, fmtClock, fmtElapsed, fmtNum, toast, closeSheet } from './ui.js';
+import { playRestSound } from './sound.js';
 import { renderHome, renderTemplateEditor } from './views/templates.js';
 import { renderActive, nextSet } from './views/active.js';
 import { cancelRestPush } from './push.js';
@@ -142,7 +143,7 @@ function tick() {
     update((s) => { s.active.rest = null; }, { silent: true });
     renderRestBar();
     if (getState().settings.sound) {
-      beep();
+      playRestSound();
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     }
     toast('Rust voorbij — volgende set! 💪');
@@ -175,7 +176,7 @@ document.addEventListener('change', onInput);
 document.addEventListener('focusin', (e) => { if (e.target.matches('.set-input')) setTimeout(() => e.target.select(), 0); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
 
-window.addEventListener('hashchange', () => { closeSheet(); window.scrollTo(0, 0); render(); });
+window.addEventListener('hashchange', () => { closeSheet(); view.scrollTop = 0; render(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); syncWakeLock(); });
 
 setRerender(render);

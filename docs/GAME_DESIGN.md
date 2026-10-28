@@ -47,3 +47,8 @@ na 8 weken Borst/Benen ±Lv18, niet-getrainde groepen ±Lv8. Lv36 ≈ 6–7 maan
 - Rustbalk toont de volgende set (oefening · kg × reps · set x van y); scherm blijft aan tijdens een training
   (Wake Lock, `settings.keepAwake`). Live Activities kunnen niet vanuit een web-app; wel een pushmelding op het vergrendelscherm
   zodra de rust voorbij is (met de volgende set), zie DATABASE_SETUP.md.
+- Einde-rust-geluid (`js/sound.js`): 6 eigen geluiden (Bel, Ping, Chiptune, Level-up, Alarm, Gong), kiesbaar met
+  volume in Instellingen. Gespeeld via een `<audio>`-element met `navigator.audioSession.type = 'playback'`:
+  hoorbaar bij stilteschakelaar en door oortjes. Volume zit in de samples (iOS negeert `audio.volume`);
+  `unlockSound()` draait bij elke set-tik (iOS wil een tik voor het eerste afspelen). Een playback-geluid kan
+  muziek van andere apps pauzeren. Bij een vergrendeld scherm bevriest iOS de app: dan geldt de pushmelding.

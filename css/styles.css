@@ -89,10 +89,14 @@ html, body {
   background-image: conic-gradient(var(--check-b) 25%, transparent 0 50%, var(--check-b) 0 75%, transparent 0);
   background-size: 32px 32px;
 }
+/* App shell: the page itself never scrolls. #view scrolls; the workout/rest bar and the tabbar are
+   fixed parts below it. (position:fixed bars drift away from a scrolling document on iOS.) */
+html { height: 100%; overflow: hidden; }
 body {
+  height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   font: 21px/1.15 var(--font-body);
   -webkit-font-smoothing: none;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
   image-rendering: pixelated;
 }
 body.sheet-open { overflow: hidden; }
@@ -116,13 +120,15 @@ strong, b { font-weight: 400; color: var(--text); }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
 #view {
-  max-width: 640px; margin: 0 auto;
-  padding: calc(var(--safe-t) + 8px) 16px calc(var(--tab-h) + var(--safe-b) + 24px);
+  flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  /* content column max 640px, centred; the scrollbar stays at the screen edge */
+  /* no top padding: a sticky header would stick below it. The first element gets the status-bar clearance instead. */
+  padding: 0 max(16px, calc((100% - 640px) / 2)) 28px;
 }
-body.has-workout-bar #view { padding-bottom: calc(var(--tab-h) + var(--safe-b) + 90px); }
-body.has-rest #view { padding-bottom: calc(var(--tab-h) + var(--safe-b) + 116px); }
+#view > :first-child:not(.sticky-head):not(.wo-top) { margin-top: calc(var(--safe-t) + 8px); }
 body[data-route="active"] #view { padding-bottom: calc(var(--safe-b) + 40px); }
-body[data-route="active"].has-rest #view { padding-bottom: calc(var(--safe-b) + 124px); }
+body[data-route="active"].has-rest #view { padding-bottom: 16px; }
 
 /* ---------- Menu cursor ▶ ---------- */
 .list-item, .btn, .tpl-card, .card-tap, .party-slot, .pv-row { position: relative; }
@@ -379,12 +385,11 @@ input:focus-visible, select:focus-visible { outline: 0; }
 .ex-card .btn-ghost { margin-top: 12px; }
 
 /* ---------- Rest bar & workout bar ---------- */
-#rest-bar, #workout-bar { position: fixed; left: 0; right: 0; z-index: 20; display: flex; justify-content: center; padding: 0 14px; pointer-events: none; }
-#rest-bar { bottom: calc(var(--tab-h) + var(--safe-b) + 14px); }
-#workout-bar { bottom: calc(var(--tab-h) + var(--safe-b) + 14px); }
-body.has-rest #workout-bar { bottom: calc(var(--tab-h) + var(--safe-b) + 92px); }
-body[data-route="active"] #rest-bar { bottom: calc(var(--safe-b) + 14px); }
-.rest, .wbar { pointer-events: auto; width: 100%; max-width: 612px; }
+#rest-bar, #workout-bar { flex: none; position: relative; z-index: 20; display: flex; justify-content: center; padding: 8px 14px 10px; }
+#rest-bar:empty, #workout-bar:empty { display: none; }
+#workout-bar { padding-bottom: 4px; }
+body[data-route="active"] #rest-bar { padding-bottom: calc(var(--safe-b) + 10px); }
+.rest, .wbar { width: 100%; max-width: 612px; }
 .rest { position: relative; overflow: hidden; display: flex; align-items: center; gap: 6px; background: var(--paper); box-shadow: var(--pb-double), 0 6px 0 3px rgba(0, 0, 0, .25); padding: 9px; }
 .rest-fill { position: absolute; left: 5px; top: auto; bottom: 5px; height: 8px; background: var(--exp); box-shadow: inset 0 -3px 0 var(--exp-dark); transition: width .25s steps(4); }
 .rest > *:not(.rest-fill) { position: relative; }
@@ -400,7 +405,7 @@ body[data-route="active"] #rest-bar { bottom: calc(var(--safe-b) + 14px); }
 
 /* ---------- Tabbar (FireRed menu box) ---------- */
 #tabbar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  flex: none; position: relative; z-index: 30;
   display: flex; justify-content: space-around;
   height: calc(var(--tab-h) + var(--safe-b)); padding: 3px 2px var(--safe-b);
   background: var(--paper);

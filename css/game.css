@@ -103,6 +103,3 @@ body[data-route="login"] #view { padding-bottom: calc(var(--safe-b) + 24px); }
 .rest-next small { grid-row: span 2; font: 7px/1.6 var(--font-pixel); color: var(--muted); text-transform: uppercase; }
 .rest-next b { font: 9px/1.6 var(--font-pixel); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rest-next span { font-size: 20px; color: var(--ink); }
-body.has-rest #view { padding-bottom: calc(var(--tab-h) + var(--safe-b) + 176px); }
-body[data-route="active"].has-rest #view { padding-bottom: calc(var(--safe-b) + 184px); }
-body.has-rest #workout-bar { bottom: calc(var(--tab-h) + var(--safe-b) + 150px); }

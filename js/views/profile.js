@@ -6,6 +6,7 @@ import { weeklyStats, weekStreak, bestE1rm, exerciseRecords, trainedExercises, s
 import { REST_OPTIONS, restLabel } from './templates.js';
 import { renderParty } from './team.js';
 import { pushStatus, enablePush, disablePush } from '../push.js';
+import { SOUNDS, previewSound } from '../sound.js';
 import { syncInfo, statusText, setNewPassword, syncNow, logout } from '../sync.js';
 
 let selEx = null;
@@ -97,6 +98,12 @@ export function renderSettings() {
         <select data-input="set-rest">${REST_OPTIONS.map((v) => `<option value="${v}" ${v === st.defaultRest ? 'selected' : ''}>${restLabel(v)}</option>`).join('')}</select></label>
       <label class="check-row"><input type="checkbox" data-input="set-auto" ${st.autoApply ? 'checked' : ''}> Gewichtsadvies automatisch invullen bij start</label>
       <label class="check-row"><input type="checkbox" data-input="set-sound" ${st.sound ? 'checked' : ''}> Geluid + trilling als de rust voorbij is</label>
+      <label>Geluid
+        <select data-input="set-sound-id">${SOUNDS.map((x) => `<option value="${x.id}" ${x.id === st.restSound ? 'selected' : ''}>${x.label}</option>`).join('')}</select></label>
+      <label>Volume <span class="muted" id="vol-val">${st.soundVolume}%</span>
+        <input type="range" id="set-volume" min="10" max="100" step="5" value="${st.soundVolume}" data-input="set-volume" data-live></label>
+      <button class="btn btn-soft btn-block" type="button" data-action="sound-test">Test geluid</button>
+      <p class="muted small">Het geluid speelt ook als je telefoon op stil staat en komt door je oortjes. Het volume hangt ook af van je telefoonvolume. Een geluid dat afspeelt kan je muziek even pauzeren.</p>
       <label class="check-row"><input type="checkbox" data-input="set-awake" ${st.keepAwake !== false ? 'checked' : ''}> Scherm aan houden tijdens een training</label>
     </section>
 
@@ -127,6 +134,7 @@ const PUSH_TEXT = {
 
 /** Fills the notifications card after render (status is async). */
 export async function mountSettings() {
+  document.getElementById('set-volume')?.addEventListener('change', () => previewSound());
   const el = document.getElementById('push-card');
   if (!el) return;
   let st = 'unsupported';
@@ -184,6 +192,13 @@ on({
   'set-rest': (el) => update((s) => { s.settings.defaultRest = Number(el.value); }),
   'set-auto': (el) => update((s) => { s.settings.autoApply = el.checked; }),
   'set-sound': (el) => update((s) => { s.settings.sound = el.checked; }),
+  'set-sound-id': (el) => { update((s) => { s.settings.restSound = el.value; }, { silent: true }); previewSound(); },
+  'set-volume': (el) => {
+    update((s) => { s.settings.soundVolume = Number(el.value); }, { silent: true });
+    const out = document.getElementById('vol-val');
+    if (out) out.textContent = `${el.value}%`;
+  },
+  'sound-test': () => previewSound(),
   'set-awake': (el) => update((s) => { s.settings.keepAwake = el.checked; }),
   'data-export': () => {
     const blob = new Blob([exportData()], { type: 'application/json' });

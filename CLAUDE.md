@@ -34,6 +34,8 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
   `supabase/functions/send-rest-push` versturen Web Push; `sw.js` toont hem. Setup: DATABASE_SETUP.md.
   Geheimen (`supabase/functions/.env`, `supabase/*.local.sql`) zijn gitignored.
 - **Hosting**: GitHub Pages via `.github/workflows/deploy.yml` → https://mouggaali.github.io/Trainer/
+- **Layout**: de pagina scrolt zelf nooit; `#view` is de scroller en de werk-/rustbalk + tabbalk zijn flex-kinderen
+  eronder (`position: fixed` balken driften op iOS los van de scrollende pagina). Nieuwe overlays mogen wel fixed.
 - **PWA**: `manifest.webmanifest` + `sw.js` (network-first) → installeerbaar op het beginscherm.
 - **Charts**: eigen kleine SVG-charts in `js/charts.js` (geen libraries).
 - **Dev-server**: `node server.js` → http://localhost:5173 (ook bereikbaar via LAN-IP voor de telefoon).
@@ -45,6 +47,7 @@ css/styles.css        alle styling (dark theme, mobile-first)
 js/app.js             router (hash), event-delegatie, ticker (rusttimer/klok), tabbar
 js/store.js           state, opslag, seed-data, queries (exerciseSessions, allExercises, ...)
 js/sync.js            Supabase login (e-mail + wachtwoord) + push/pull van de state
+js/sound.js           einde-rust-geluiden (zelf gesynthetiseerd, WAV via <audio>, iOS audioSession 'playback')
 js/push.js            Web Push: abonnement + rest_timers plannen/verplaatsen/annuleren
 js/config.js          GEGENEREERD, gitignored (Supabase URL + publishable key)
 js/progression.js     gewichtsadvies-algoritme + e1RM
