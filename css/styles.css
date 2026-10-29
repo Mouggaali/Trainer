@@ -93,7 +93,9 @@ html, body {
    fixed parts below it. (position:fixed bars drift away from a scrolling document on iOS.) */
 html { height: 100%; overflow: hidden; }
 body {
-  height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  /* Pinned to all four screen edges instead of height:100dvh — in the iOS home-screen app
+     (black-translucent status bar) 100dvh is the screen minus the status bar, leaving a gap under the tabbar. */
+  position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden;
   font: 21px/1.15 var(--font-body);
   -webkit-font-smoothing: none;
   overscroll-behavior: none;
