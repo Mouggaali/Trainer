@@ -40,7 +40,8 @@ export function renderWorkoutDetail(id) {
   return `
     <header class="page-head">
       <button class="icon-btn" data-action="back" aria-label="Terug">${icon('chevronLeft')}</button>
-      <h1 class="h-sm">${esc(w.name)}</h1><span></span>
+      <h1 class="h-sm">${esc(w.name)}</h1>
+      <button class="icon-btn accent" data-action="go" data-href="#/workout-edit/${w.id}" aria-label="Training bewerken">${icon('edit')}</button>
     </header>
     <p class="muted">${fmtDate(w.startedAt, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · ${fmtTime(w.startedAt)}–${fmtTime(w.finishedAt)}</p>
     <div class="stat-grid stat-grid-3">
@@ -55,11 +56,12 @@ export function renderWorkoutDetail(id) {
         <div class="detail-sets">
           <div class="ds-row muted small"><span>Set</span><span>Gedaan</span><span>Doel</span><span>e1RM</span></div>
           ${e.sets.map((s, i) => `<div class="ds-row ${s.warmup ? 'warmup' : ''}">
-            <span class="set-tag">${setLabel(e.sets, i)}</span><span>${setTxt(s)}</span>
+            <span class="set-tag">${setLabel(e.sets, i)}</span><span>${setTxt(s)}${s.rir != null ? ` <i class="rir-inline">RIR ${s.rir >= 3 ? '3+' : s.rir}</i>` : ''}</span>
             <span class="muted">${s.target?.reps ? (s.target.kg ? `${fmtNum(s.target.kg)} × ${s.target.reps}` : `${s.target.reps}`) : '–'}</span>
             <span class="muted">${s.kg && !s.warmup ? fmtNum(e1rm(s.kg, s.reps), 1) : '–'}</span></div>`).join('')}
         </div>
       </section>`).join('')}
+    <button class="btn btn-soft btn-block" data-action="go" data-href="#/workout-edit/${w.id}">${icon('edit')} Training bewerken</button>
     <button class="btn btn-soft btn-block" data-action="hist-to-template" data-id="${w.id}">${icon('copy')} Opslaan als nieuw template</button>
     <button class="btn btn-danger-soft btn-block" data-action="hist-delete" data-id="${w.id}">${icon('trash')} Training verwijderen</button>`;
 }
@@ -76,7 +78,7 @@ on({
       s.templates.push({
         id: uid(), name: `${w.name} (kopie)`, updatedAt: Date.now(),
         exercises: w.exercises.map((e) => ({
-          exerciseId: e.exerciseId, restSec: e.restSec,
+          exerciseId: e.exerciseId, restSec: e.restSec, ...(e.repRange ? { repRange: e.repRange } : {}),
           sets: e.sets.map((x) => ({ kg: x.kg, reps: x.target?.reps ?? x.reps, ...(x.warmup ? { warmup: true } : {}) })),
         })),
       });

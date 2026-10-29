@@ -57,7 +57,8 @@ js/ui.js              helpers: escape, formatters, iconen, sheets (bottom sheets
 js/exercise-library.js standaard oefeningen (naam, equipment, spiergroep, lower-body flag)
 js/game/xp.js         monster-XP (afgeleid uit historie), levels, evoluties
 js/game/monsters.js   18 originele pixel-monsters (24×24 grids → SVG)
-js/views/*.js         schermen: home(templates), active (training), history, profile (+team), team, body, exercises
+js/game/badges.js     8 badges (afgeleid uit historie) + pixel-medailles
+js/views/*.js         schermen: home(templates), active (training), history, workout-edit, profile (+team), team, body, exercises
 server.js             statische dev-server zonder dependencies
 sw.js                 service worker
 ```

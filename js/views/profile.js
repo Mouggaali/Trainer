@@ -104,6 +104,7 @@ export function renderSettings() {
         <input type="range" id="set-volume" min="10" max="100" step="5" value="${st.soundVolume}" data-input="set-volume" data-live></label>
       <button class="btn btn-soft btn-block" type="button" data-action="sound-test">Test geluid</button>
       <p class="muted small">Het geluid speelt ook als je telefoon op stil staat en komt door je oortjes. Het volume hangt ook af van je telefoonvolume. Een geluid dat afspeelt kan je muziek even pauzeren.</p>
+      <label class="check-row"><input type="checkbox" data-input="set-rir" ${st.askRir !== false ? 'checked' : ''}> Na elke set vragen hoeveel reps je nog over had (RIR)</label>
       <label class="check-row"><input type="checkbox" data-input="set-awake" ${st.keepAwake !== false ? 'checked' : ''}> Scherm aan houden tijdens een training</label>
     </section>
 
@@ -199,6 +200,7 @@ on({
     if (out) out.textContent = `${el.value}%`;
   },
   'sound-test': () => previewSound(),
+  'set-rir': (el) => update((s) => { s.settings.askRir = el.checked; }),
   'set-awake': (el) => update((s) => { s.settings.keepAwake = el.checked; }),
   'data-export': () => {
     const blob = new Blob([exportData()], { type: 'application/json' });

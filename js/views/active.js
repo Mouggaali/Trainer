@@ -1,19 +1,20 @@
 import { getState, update, uid, getExercise, exerciseSessions } from '../store.js';
 import { esc, on, go, icon, fmtNum, fmtElapsed, fmtDate, fmtDuration, fmtVolume, choose, sheetPromise, toast, num, unlockAudio, setLabel, xpPop, sfx, dialogSequence } from '../ui.js';
 import { setXpPreview, workoutGains, XP } from '../game/xp.js';
+import { newBadges, badgeSvg } from '../game/badges.js';
 import { monsterSprite, monsterName } from '../game/monsters.js';
 import { expBar, pct } from './team.js';
 import { recommend } from '../progression.js';
-import { bestE1rm, workoutVolume, workoutSetCount } from '../stats.js';
-import { pickExercise, plannedSetsFor } from './exercises.js';
+import { bestE1rm, workoutVolume, workoutSetCount, workoutPrs } from '../stats.js';
+import { pickExercise, plannedSetsFor, repRangeFor, exerciseNote, editNote } from './exercises.js';
 import { pickRest, restLabel } from './templates.js';
 import { unlockSound } from '../sound.js';
 import { scheduleRestPush, moveRestPush, cancelRestPush } from '../push.js';
 
-function buildExercise(exerciseId, planned, restSec) {
+function buildExercise(exerciseId, planned, restSec, repRange = null) {
   const s = getState();
   const ex = getExercise(exerciseId);
-  const rec = recommend(ex, exerciseSessions(exerciseId), planned);
+  const rec = recommend(ex, exerciseSessions(exerciseId), planned, repRange);
   const auto = s.settings.autoApply && rec.type !== 'new';
   const sets = planned.map((p, i) => {
     const r = rec.sets[i] || {};
@@ -21,7 +22,10 @@ function buildExercise(exerciseId, planned, restSec) {
     const reps = auto ? r.reps ?? p.reps : p.reps;
     return { id: uid(), kg: kg ?? null, reps: reps ?? null, done: false, warmup: !!p.warmup, target: { kg: r.kg ?? p.kg ?? null, reps: r.reps ?? p.reps ?? null } };
   });
-  return { uid: uid(), exerciseId, restSec: restSec ?? s.settings.defaultRest, targetSets: planned.filter((p) => !p.warmup).length, sets, rec };
+  return {
+    uid: uid(), exerciseId, restSec: restSec ?? s.settings.defaultRest, targetSets: planned.filter((p) => !p.warmup).length,
+    ...(rec.range ? { repRange: rec.range } : {}), sets, rec,
+  };
 }
 
 /** The next unchecked set after a rest: first in the exercise just trained, else the next exercise with open sets. */
@@ -69,7 +73,7 @@ export async function startWorkout(templateId) {
     name: t ? t.name : 'Training',
     startedAt: Date.now(),
     rest: null,
-    exercises: t ? t.exercises.map((te) => buildExercise(te.exerciseId, te.sets, te.restSec)) : [],
+    exercises: t ? t.exercises.map((te) => buildExercise(te.exerciseId, te.sets, te.restSec, te.repRange)) : [],
   };
   update((st) => { st.active = active; });
   go('#/active');
@@ -77,6 +81,7 @@ export async function startWorkout(templateId) {
 
 const REC_UI = {
   increase: { cls: 'up', icon: 'trendUp' },
+  reps: { cls: 'up', icon: 'trendUp' },
   hold: { cls: 'hold', icon: 'equal' },
   deload: { cls: 'down', icon: 'trendDown' },
   new: { cls: 'new', icon: 'sparkle' },
@@ -85,6 +90,19 @@ const REC_UI = {
 function recApplied(we) {
   return we.sets.every((st, i) => st.done || st.warmup || !we.rec.sets[i]
     || (st.kg === we.rec.sets[i].kg && st.reps === we.rec.sets[i].reps));
+}
+
+// Set that just got checked: show the "reps over?" (RIR) chips under it. UI-only, not stored.
+let rirAsk = null;
+const RIR_LABEL = (v) => (v >= 3 ? '3+' : String(v));
+
+function rirRow(we, ei, si) {
+  const st = we.sets[si];
+  return `<div class="rir-row">
+    <span>Reps over?</span>
+    ${[0, 1, 2, 3].map((v) => `<button class="rir-chip ${st.rir === v ? 'on' : ''}" data-action="wo-rir" data-ex="${ei}" data-set="${si}" data-v="${v}">${RIR_LABEL(v)}</button>`).join('')}
+    <button class="rir-chip rir-skip" data-action="wo-rir" data-ex="${ei}" data-set="${si}" data-v="">×</button>
+  </div>`;
 }
 
 function exerciseCard(we, ei, a) {
@@ -98,7 +116,7 @@ function exerciseCard(we, ei, a) {
     <div class="rec rec-${ui.cls}">
       <div class="rec-icon">${icon(ui.icon)}</div>
       <div class="rec-body"><div class="rec-title">${esc(r.title)}${summary ? ` · ${summary}` : ''}</div>
-      <div class="rec-text">${esc(r.message)}</div></div>
+      <div class="rec-text">${r.range ? `<b class="rec-range">Bereik ${r.range.min}–${r.range.max}</b> ` : ''}${esc(r.message)}</div></div>
       ${r.type !== 'new' && !recApplied(we) ? `<button class="btn btn-soft btn-sm" data-action="wo-apply-rec" data-ex="${ei}">Toepassen</button>` : ''}
     </div>` : '';
 
@@ -111,9 +129,10 @@ function exerciseCard(we, ei, a) {
         <div class="set-prev">${prevTxt}</div>
         <input class="set-input" inputmode="decimal" enterkeyhint="next" data-input="wo-set" data-live data-field="kg" data-ex="${ei}" data-set="${si}" value="${fmtNum(st.kg)}" placeholder="${prev?.kg ? fmtNum(prev.kg) : '–'}">
         <input class="set-input" inputmode="numeric" enterkeyhint="done" data-input="wo-set" data-live data-field="reps" data-ex="${ei}" data-set="${si}" value="${st.reps ?? ''}" placeholder="${prev?.reps ?? st.target?.reps ?? '–'}">
-        <button class="set-check" data-action="wo-check" data-ex="${ei}" data-set="${si}" aria-label="Set afvinken">${icon('check')}</button>
-      </div>`;
+        <button class="set-check" data-action="wo-check" data-ex="${ei}" data-set="${si}" aria-label="Set afvinken">${icon('check')}${st.done && st.rir != null ? `<i class="rir-badge">${RIR_LABEL(st.rir)}</i>` : ''}</button>
+      </div>${rirAsk && rirAsk.ex === ei && rirAsk.set === si && st.done ? rirRow(we, ei, si) : ''}`;
   }).join('');
+  const note = exerciseNote(we.exerciseId);
 
   return `
     <section class="card ex-card">
@@ -122,6 +141,7 @@ function exerciseCard(we, ei, a) {
         <button class="chip chip-btn" data-action="wo-rest" data-ex="${ei}">${icon('timer')} ${restLabel(we.restSec)}</button>
         <button class="icon-btn icon-btn-sm" data-action="wo-ex-menu" data-ex="${ei}" aria-label="Opties">${icon('more')}</button>
       </div>
+      ${note ? `<button class="ex-note" data-action="wo-note" data-ex="${ei}">${icon('edit')}<span>${esc(note)}</span></button>` : ''}
       ${banner}
       <div class="set-table">
         <div class="set-row set-head"><span>Set</span><span>Vorige</span><span>kg</span><span>Reps</span><span>${icon('check')}</span></div>
@@ -158,10 +178,6 @@ export function renderActive() {
 
 const ix = (el) => ({ ex: Number(el.dataset.ex), set: Number(el.dataset.set) });
 
-function prevBest(exerciseId, workoutId) {
-  return Math.max(0, ...exerciseSessions(exerciseId).filter((x) => x.workoutId !== workoutId).map((x) => bestE1rm(x.sets)));
-}
-
 async function finishWorkout() {
   const a = getState().active;
   const all = a.exercises.flatMap((e) => e.sets);
@@ -194,11 +210,7 @@ async function finishWorkout() {
       .map((x) => (mode === 'complete' && !x.done && x.reps != null ? { ...x, done: true } : x))
       .filter((x) => x.done),
   })).filter((e) => e.sets.length);
-  const prs = w.exercises.filter((e) => {
-    const before = prevBest(e.exerciseId, w.id);
-    return before > 0 && bestE1rm(e.sets) > before + 0.01;
-  }).map((e) => e.exerciseId);
-  w.prs = prs;
+  w.prs = workoutPrs(w, getState().workouts);
 
   cancelRestPush();
   update((s) => { s.workouts.push(w); s.active = null; });
@@ -215,6 +227,7 @@ async function finishWorkout() {
         const toTpl = (e) => ({
           exerciseId: e.exerciseId,
           restSec: e.restSec,
+          ...(e.repRange ? { repRange: e.repRange } : {}),
           sets: e.sets.map((x) => ({ kg: x.kg, reps: x.target?.reps ?? x.reps, ...(x.warmup ? { warmup: true } : {}) })),
         });
         // Update performed exercises in place; skipped ones stay as they were; new ones are appended.
@@ -234,8 +247,9 @@ async function finishWorkout() {
 
 /** FireRed-style EXP / level-up / evolution sequence after a workout. */
 async function playGains(w) {
-  const g = workoutGains(w.id);
-  if (!g || !g.monsters.length) return;
+  const g = workoutGains(w.id) || { weekGoal: false, monsters: [] };
+  const earned = newBadges(w.id);
+  if (!g.monsters.length && !earned.length) return;
   const nicks = getState().profile.monsterNames || {};
   const sound = getState().settings.sound;
   const stage = (m, form, lvl, into, needed, extra = '') => `
@@ -277,6 +291,13 @@ async function playGains(w) {
         onShow: () => sound && sfx('evolve'),
       });
     }
+  }
+  for (const b of earned) {
+    steps.push({
+      text: `Gefeliciteerd! Je hebt de ${b.name.toUpperCase()}-BADGE verdiend! ${b.desc}`,
+      stage: `<div class="gain-card badge-gain">${badgeSvg(b.id, true, 128)}<div class="gain-banner">★ NIEUWE BADGE ★</div></div>`,
+      onShow: () => sound && sfx('levelup'),
+    });
   }
   await dialogSequence(steps);
 }
@@ -331,6 +352,7 @@ on({
         t.reps = reps;
         if (t.kg == null && prev?.kg) t.kg = prev.kg;
         t.done = true;
+        rirAsk = !t.warmup && s.settings.askRir !== false ? { ex, set } : null;
         s.active.rest = we.restSec > 0 ? { endsAt: Date.now() + we.restSec * 1000, total: we.restSec, ex } : null;
       });
       if (navigator.vibrate) navigator.vibrate(30);
@@ -344,9 +366,20 @@ on({
         }
       }
     } else {
-      update((s) => { s.active.exercises[ex].sets[set].done = false; });
+      rirAsk = null;
+      update((s) => { const t = s.active.exercises[ex].sets[set]; t.done = false; delete t.rir; });
     }
   },
+  'wo-rir': (el) => {
+    const { ex, set } = ix(el);
+    const v = el.dataset.v === '' ? null : Number(el.dataset.v);
+    rirAsk = null;
+    update((s) => {
+      const t = s.active.exercises[ex].sets[set];
+      if (v == null) delete t.rir; else t.rir = v;
+    });
+  },
+  'wo-note': (el) => editNote(getState().active.exercises[Number(el.dataset.ex)].exerciseId),
   'wo-set-menu': async (el) => {
     const { ex, set } = ix(el);
     const st = getState().active.exercises[ex].sets[set];
@@ -386,12 +419,14 @@ on({
     const we = getState().active.exercises[i];
     const v = await choose(getExercise(we.exerciseId).name, null, [
       { label: 'Progressie bekijken', value: 'view', icon: 'trendUp' },
+      { label: exerciseNote(we.exerciseId) ? 'Notitie bewerken' : 'Notitie toevoegen', value: 'note', icon: 'edit' },
       { label: 'Omhoog', value: 'up', icon: 'up' },
       { label: 'Omlaag', value: 'down', icon: 'down' },
       { label: 'Oefening verwijderen', value: 'del', icon: 'trash', style: 'btn-danger-soft' },
       { label: 'Annuleren', value: '' },
     ]);
     if (v === 'view') return go(`#/exercise/${we.exerciseId}`);
+    if (v === 'note') return editNote(we.exerciseId);
     update((s) => {
       const list = s.active.exercises;
       if (v === 'up' && i > 0) [list[i - 1], list[i]] = [list[i], list[i - 1]];
@@ -402,7 +437,7 @@ on({
   'wo-add-ex': async () => {
     const id = await pickExercise();
     if (!id) return;
-    const we = buildExercise(id, plannedSetsFor(id), null);
+    const we = buildExercise(id, plannedSetsFor(id), null, repRangeFor(id));
     update((s) => { s.active.exercises.push(we); });
   },
   'wo-finish': () => finishWorkout(),

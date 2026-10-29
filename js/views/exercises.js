@@ -56,6 +56,47 @@ export function plannedSetsFor(exerciseId) {
   return [{ kg: null, reps: 10 }, { kg: null, reps: 10 }, { kg: null, reps: 10 }];
 }
 
+/** Rep range for an exercise outside a template run: from a template that contains it, else the last session. */
+export function repRangeFor(exerciseId) {
+  for (const t of getState().templates) {
+    const te = t.exercises.find((e) => e.exerciseId === exerciseId);
+    if (te) return te.repRange || null;
+  }
+  for (const w of [...getState().workouts].sort((a, b) => b.startedAt - a.startedAt)) {
+    const e = w.exercises.find((x) => x.exerciseId === exerciseId);
+    if (e) return e.repRange || null;
+  }
+  return null;
+}
+
+export const exerciseNote = (exerciseId) => getState().exerciseNotes?.[exerciseId] || '';
+
+/** Edit the note of an exercise (seat height, technique cues…) in a sheet. */
+export async function editNote(exerciseId) {
+  const current = exerciseNote(exerciseId);
+  const { el, result } = sheetPromise(`
+    <h3 class="sheet-title">Notitie</h3>
+    <p class="sheet-text">${esc(getExercise(exerciseId).name)}</p>
+    <form class="form" onsubmit="return false">
+      <label>Bv. stoelstand, grip, techniekpunt<textarea id="note-text" rows="4" maxlength="300" placeholder="Stoel op stand 4, ellebogen iets naar binnen">${esc(current)}</textarea></label>
+      <div class="sheet-actions">
+        <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="save">Opslaan</button>
+        <button class="btn btn-secondary btn-block" data-action="sheet-dismiss" type="button">Annuleren</button>
+      </div>
+    </form>`);
+  const ta = el.querySelector('#note-text');
+  let value = current;
+  ta.addEventListener('input', () => { value = ta.value; });
+  if ((await result) !== 'save') return;
+  update((st) => {
+    st.exerciseNotes = st.exerciseNotes || {};
+    const v = value.trim();
+    if (v) st.exerciseNotes[exerciseId] = v;
+    else delete st.exerciseNotes[exerciseId];
+  });
+  toast('Notitie opgeslagen');
+}
+
 const setTxt = (s) => (s.kg ? `${fmtNum(s.kg)} kg × ${s.reps ?? 0}` : `${s.reps ?? 0} reps`);
 
 export function renderExerciseDetail(id) {
@@ -67,7 +108,9 @@ export function renderExerciseDetail(id) {
     x: s.date,
     y: weighted ? Math.round(bestE1rm(s.sets) * 10) / 10 : Math.max(0, ...workingSets(s.sets).map((x) => x.reps || 0)),
   })).filter((p) => p.y > 0);
-  const next = recommend(ex, sessions, plannedSetsFor(id));
+  const range = repRangeFor(id);
+  const next = recommend(ex, sessions, plannedSetsFor(id), range);
+  const note = exerciseNote(id);
   const firstNext = next.sets.filter((s) => !s.warmup).reduce((a, x) => (!a || (x.kg || 0) > (a.kg || 0) ? x : a), null);
 
   return `
@@ -76,7 +119,8 @@ export function renderExerciseDetail(id) {
       <h1 class="h-sm">${esc(ex.name)}</h1>
       <button class="icon-btn accent" data-action="ex-edit" data-id="${esc(id)}" aria-label="Bewerken">${icon('edit')}</button>
     </header>
-    <div class="chips"><span class="chip">${esc(ex.muscle)}</span><span class="chip">${EQUIPMENT[ex.equipment] || ''}</span>${ex.increment ? `<span class="chip">stap ${fmtNum(ex.increment)} kg</span>` : ''}</div>
+    <div class="chips"><span class="chip">${esc(ex.muscle)}</span><span class="chip">${EQUIPMENT[ex.equipment] || ''}</span>${ex.increment ? `<span class="chip">stap ${fmtNum(ex.increment)} kg</span>` : ''}${range ? `<span class="chip">${range.min}–${range.max} reps</span>` : ''}</div>
+    <button class="ex-note ${note ? '' : 'ex-note-empty'}" data-action="ex-note" data-id="${esc(id)}">${icon('edit')}<span>${note ? esc(note) : 'Notitie toevoegen (stoelstand, techniek…)'}</span></button>
 
     <section class="card">
       <div class="card-head"><div><h2>${weighted ? 'Geschatte 1RM' : 'Max reps'}</h2><div class="muted small">per sessie</div></div></div>
@@ -143,6 +187,7 @@ on({
   'ex-open': (el) => go(`#/exercise/${el.dataset.value}`),
   'ex-new': async () => { const id = await editExercise(null); if (id) go(`#/exercise/${id}`); },
   'ex-edit': (el) => editExercise(el.dataset.id),
+  'ex-note': (el) => editNote(el.dataset.id),
   'ex-form-save': () => {
     const form = document.getElementById('ex-form');
     const f = new FormData(form);

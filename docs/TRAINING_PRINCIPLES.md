@@ -44,6 +44,18 @@ Alleen **afgevinkte werksets** tellen (warming-up sets niet).
 Epley: `kg × (1 + reps / 30)` (1 rep = kg). Gebruikt voor progressiecharts en PR-detectie.
 
 ## Ideeën om later toe te voegen
-- RPE/RIR per set loggen en advies daarop afstemmen.
-- Double progression-modus (eerst reps omhoog binnen bereik 8–12, dan gewicht).
 - Volume per spiergroep per week met waarschuwing bij te weinig/te veel.
+
+## Rep-bereik (double progression) — `recommendRange()`
+Per template-oefening optioneel `repRange: { min, max }` (bv. 8–12). Beoordeling op de vorige sessie:
+1. Alle geplande werksets ≥ `max` reps → gewicht +stap (`incrementFor`), doel terug naar `min` reps.
+2. Een set onder `min` (of sets gemist) → zelfde gewicht, doel `min`; 3× op rij op hetzelfde gewicht → deload −10%.
+3. Anders → zelfde gewicht, per set laatste reps +1 (gemiddelde RIR ≥ 3 → +2), afgekapt op `max`.
+Lichaamsgewicht-oefeningen: bovenkant bereikt → tip om gewicht toe te voegen.
+
+## RIR (reps in reserve)
+Na het afvinken van een werkset vraagt de app "Reps over? 0 · 1 · 2 · 3+" (optioneel, `settings.askRir`).
+- Vaste reps, gehaald met gemiddelde RIR ≥ 3 → dubbele stap; gehaald met RIR 0 → enkele stap + hersteltip.
+- Dubbele stappen nooit groter dan 15% van het gewicht (`bigStep`), zodat lichte kabel/dumbbell-gewichten
+  niet met 30–40% omhoog springen.
+- Geen RIR ingevuld → regels zoals hierboven zonder RIR.

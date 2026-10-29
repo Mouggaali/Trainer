@@ -9,6 +9,7 @@ import { renderProfile, renderSettings, mountSettings } from './views/profile.js
 import { renderExercises, mountExercises, renderExerciseDetail } from './views/exercises.js';
 import { renderBody, renderMeasureForm } from './views/body.js';
 import { renderMonsterDetail } from './views/team.js';
+import { renderWorkoutEdit } from './views/workout-edit.js';
 import { initSync, onSyncChange, statusText, gateState } from './sync.js';
 import { renderLogin, renderSplash } from './views/login.js';
 
@@ -17,6 +18,7 @@ const routes = {
   active: { render: renderActive, tab: null },
   template: { render: renderTemplateEditor, tab: 'workout' },
   history: { render: (id) => (id ? renderWorkoutDetail(id) : renderHistory()), tab: 'history' },
+  'workout-edit': { render: renderWorkoutEdit, tab: 'history' },
   profile: { render: renderProfile, tab: 'profile' },
   settings: { render: renderSettings, mount: mountSettings, tab: 'profile' },
   exercises: { render: (id) => renderExercises(id), mount: mountExercises, tab: 'exercises' },

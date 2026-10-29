@@ -103,3 +103,43 @@ body[data-route="login"] #view { padding-bottom: calc(var(--safe-b) + 24px); }
 .rest-next small { grid-row: span 2; font: 7px/1.6 var(--font-pixel); color: var(--muted); text-transform: uppercase; }
 .rest-next b { font: 9px/1.6 var(--font-pixel); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rest-next span { font-size: 20px; color: var(--ink); }
+
+/* ---------- Rep range (template editor) ---------- */
+.range-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 2px 10px; color: var(--ink); }
+.range-row .check-row { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 19px; }
+.range-input { width: 56px; flex: none; }
+.rec-range { color: var(--ink); }
+
+/* ---------- RIR (reps in reserve) ---------- */
+.rir-row { display: flex; align-items: center; gap: 6px; padding: 4px 2px 8px 44px; color: var(--ink); font-size: 18px; }
+.rir-row > span { margin-right: 2px; white-space: nowrap; }
+.rir-chip { min-width: 40px; height: 36px; background: var(--paper-2); box-shadow: var(--pb-single); font: 22px/1 var(--font-body); color: var(--ink); }
+.rir-chip.on { background: var(--exp); color: #fff; }
+.rir-chip.rir-skip { min-width: 32px; color: var(--muted); }
+.set-check { position: relative; }
+.rir-badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 3px; background: var(--exp); color: #fff; font: 7px/18px var(--font-pixel); font-style: normal; text-align: center; box-shadow: 0 0 0 2px var(--ink); }
+.rir-inline { font-style: normal; font-size: 16px; color: var(--exp-dark); }
+
+/* ---------- Exercise notes ---------- */
+.ex-note { display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left; margin: 0 0 10px; padding: 8px 10px; background: #fff4c0; color: var(--ink); box-shadow: 0 0 0 2px var(--ink); font-size: 19px; line-height: 1.15; }
+.ex-note .ic { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+.ex-note-empty { background: var(--paper-2); color: var(--muted); }
+textarea { width: 100%; background: var(--paper-2); border: 0; box-shadow: var(--pb-single); padding: 10px; font: 20px/1.2 var(--font-body); color: var(--ink); resize: vertical; }
+
+/* ---------- Workout editor ---------- */
+.edit-table .set-row { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1fr) 52px 36px; }
+.edit-table .set-head span { text-align: center; }
+.we-when { display: grid; grid-template-columns: 1.4fr 1fr 0.9fr; gap: 8px; }
+.we-when label { margin-bottom: 0; min-width: 0; }
+
+/* ---------- Badges ---------- */
+.badge-case { margin: 0 3px 16px; padding: 10px 12px 12px; background: #3a4458; box-shadow: 0 0 0 3px var(--ink), inset 0 0 0 3px #59647c; }
+.badge-case-head { display: flex; justify-content: space-between; font: 9px/1.8 var(--font-pixel); color: #f8d030; text-shadow: 2px 2px 0 var(--ink); margin-bottom: 8px; }
+.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.badge-slot { display: grid; place-items: center; aspect-ratio: 1; background: #2a3242; box-shadow: inset 0 0 0 2px #1c2230; min-height: 56px; }
+.badge-slot.on { background: #45506a; }
+.badge-slot:not(.on) .badge-svg { opacity: .7; }
+.badge-svg { image-rendering: pixelated; display: block; }
+.badge-sheet { display: grid; justify-items: center; text-align: center; gap: 6px; }
+.badge-sheet .exp-bar { width: 100%; }
+.badge-gain { justify-items: center; }

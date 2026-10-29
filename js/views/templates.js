@@ -72,12 +72,13 @@ function previewSheet(id) {
   const last = templateLastPerformed(id);
   const rows = t.exercises.map((te) => {
     const ex = getExercise(te.exerciseId);
-    const rec = recommend(ex, exerciseSessions(te.exerciseId), te.sets);
+    const rec = recommend(ex, exerciseSessions(te.exerciseId), te.sets, te.repRange);
     const work = te.sets.filter((x) => !x.warmup).length;
-    const cls = { increase: 'up', hold: 'hold', deload: 'down', new: 'new' }[rec.type];
-    const ic = { increase: 'trendUp', hold: 'equal', deload: 'trendDown', new: 'sparkle' }[rec.type];
+    const cls = { increase: 'up', reps: 'up', hold: 'hold', deload: 'down', new: 'new' }[rec.type];
+    const ic = { increase: 'trendUp', reps: 'trendUp', hold: 'equal', deload: 'trendDown', new: 'sparkle' }[rec.type];
+    const range = te.repRange ? ` · ${te.repRange.min}–${te.repRange.max} reps` : '';
     return `<div class="pv-row"><div class="li-main"><div class="li-title">${work} × ${esc(ex.name)}</div>
-      <div class="li-sub">${esc(ex.muscle)}</div></div>
+      <div class="li-sub">${esc(ex.muscle)}${range}</div></div>
       <span class="rec-pill rec-pill-${cls}">${icon(ic)}${esc(rec.title)}</span></div>`;
   }).join('');
   sheetPromise(`
@@ -111,6 +112,14 @@ export function renderTemplateEditor(id) {
         <button class="chip chip-btn" data-action="tpl-rest" data-ex="${ei}">${icon('timer')} ${restLabel(te.restSec)}</button>
         <button class="icon-btn icon-btn-sm" data-action="tpl-ex-menu" data-ex="${ei}" aria-label="Opties">${icon('more')}</button>
       </div>
+      <div class="range-row">
+        <label class="check-row"><input type="checkbox" data-input="tpl-range-on" data-ex="${ei}" ${te.repRange ? 'checked' : ''}> Rep-bereik</label>
+        ${te.repRange ? `
+          <input class="set-input range-input" inputmode="numeric" data-input="tpl-range" data-live data-field="min" data-ex="${ei}" value="${te.repRange.min}" aria-label="Minimaal aantal reps">
+          <span>–</span>
+          <input class="set-input range-input" inputmode="numeric" data-input="tpl-range" data-live data-field="max" data-ex="${ei}" value="${te.repRange.max}" aria-label="Maximaal aantal reps">
+          <span class="muted small">reps</span>` : '<span class="muted small">vaste reps</span>'}
+      </div>
       <div class="set-table tpl-table">
         <div class="set-row set-head"><span>Set</span><span>kg</span><span>Reps</span><span></span></div>
         ${te.sets.map((st, si) => `
@@ -132,7 +141,8 @@ export function renderTemplateEditor(id) {
       <button class="btn btn-primary btn-sm" data-action="tpl-save">Opslaan</button>
     </header>
     <input class="title-input" data-input="tpl-name" data-live value="${esc(d.name)}" placeholder="Naam, bv. Maandag – Push">
-    <p class="muted small hint">Tip: tik op een setnummer om er een warming-up set (W) van te maken. Die telt niet mee voor het advies.</p>
+    <p class="muted small hint">Tip: tik op een setnummer om er een warming-up set (W) van te maken. Die telt niet mee voor het advies.
+      Met een <b>rep-bereik</b> (bv. 8–12) gaan eerst je reps omhoog en pas bij de bovenkant op alle sets het gewicht.</p>
     ${blocks}
     <button class="btn btn-soft btn-block" data-action="tpl-add-ex">${icon('plus')} Oefening toevoegen</button>
     ${id !== 'new' ? `<button class="btn btn-danger-soft btn-block" data-action="tpl-delete" data-id="${id}">${icon('trash')} Template verwijderen</button>` : ''}`;
@@ -174,6 +184,21 @@ on({
     const st = draft.exercises[ex].sets[set];
     st[el.dataset.field] = el.dataset.field === 'reps' ? (num(el.value) == null ? null : Math.round(num(el.value))) : num(el.value);
   },
+  'tpl-range-on': (el) => {
+    const te = draft.exercises[Number(el.dataset.ex)];
+    if (el.checked) {
+      const r = te.sets.find((x) => !x.warmup)?.reps || 10;
+      te.repRange = r <= 6 ? { min: 5, max: 8 } : r >= 15 ? { min: 12, max: 15 } : { min: 8, max: 12 };
+    } else {
+      delete te.repRange;
+    }
+    redraw();
+  },
+  'tpl-range': (el) => {
+    const te = draft.exercises[Number(el.dataset.ex)];
+    const v = Math.round(num(el.value) || 0);
+    if (te.repRange && v > 0) te.repRange[el.dataset.field] = v;
+  },
   'tpl-set-add': (el) => {
     const sets = draft.exercises[Number(el.dataset.ex)].sets;
     const last = sets.at(-1);
@@ -212,6 +237,12 @@ on({
   'tpl-cancel': () => { draft = null; go('#/workout'); },
   'tpl-save': () => {
     const { _for, ...t } = draft;
+    for (const te of t.exercises) {
+      if (!te.repRange) continue;
+      const { min, max } = te.repRange;
+      if (!(min > 0 && max > 0)) { delete te.repRange; continue; }
+      te.repRange = { min: Math.min(min, max), max: Math.max(min, max) };
+    }
     t.name = t.name.trim() || 'Template';
     t.updatedAt = Date.now();
     update((s) => {

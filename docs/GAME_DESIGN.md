@@ -52,3 +52,11 @@ na 8 weken Borst/Benen ±Lv18, niet-getrainde groepen ±Lv8. Lv36 ≈ 6–7 maan
   hoorbaar bij stilteschakelaar en door oortjes. Volume zit in de samples (iOS negeert `audio.volume`);
   `unlockSound()` draait bij elke set-tik (iOS wil een tik voor het eerste afspelen). Een playback-geluid kan
   muziek van andere apps pauzeren. Bij een vergrendeld scherm bevriest iOS de app: dan geldt de pushmelding.
+
+## Badges (`js/game/badges.js`)
+8 eigen badges (pixel-medailles, 12×12 → SVG), afgeleid uit de historie zoals XP:
+Start (1e training) · Ritme (4 weken op rij weekdoel) · IJzer (10 weken) · Evolutie (monster Lv16) ·
+Team (alle monsters Lv10+) · Bank (Bench Press (Barbell) e1RM ≥ laatste lichaamsgewicht) ·
+Ton (5.000 kg in één training) · Kampioen (50 trainingen).
+Badgekoffer op het Team-scherm (tik = eis + voortgang); nieuwe badges verschijnen in de eindreeks na een training
+(`newBadges(workoutId)` vergelijkt de historie vóór en na die training).

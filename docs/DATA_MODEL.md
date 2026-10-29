@@ -10,7 +10,8 @@ Tijdstippen zijn epoch-milliseconden; datums van metingen zijn `YYYY-MM-DD`.
   "settings": { "weeklyGoal": 3, "defaultRest": 120, "autoApply": true, "sound": true },
 
   "customExercises":   [ { "id", "name", "equipment", "muscle", "lower", "increment"?, "custom": true } ],
-  "exerciseOverrides": { "<libraryId>": { "name"?, "equipment"?, "muscle"?, "lower"?, "increment"? } },
+  "exerciseOverrides": { "<libraryId>": { "name"?, "equipment"?, "muscle"?, "lower"?, "increment"?, "secondary"? } },
+  "exerciseNotes":     { "<exerciseId>": "Stoel stand 4, ..." },
 
   "templates": [{
     "id", "name", "updatedAt",
@@ -53,3 +54,8 @@ Verhoog `version` en voeg een stap toe in `migrate()` in `store.js`. Oude data m
 
 ## Relationeel equivalent
 Zie `supabase/schema.sql` voor de tabellen die bij cloud-sync worden gebruikt.
+
+## Optionele velden (geen migratie nodig)
+- `templates[].exercises[].repRange` en `workouts[].exercises[].repRange`: `{ "min": 8, "max": 12 }` → double progression.
+- `workouts[].exercises[].sets[].rir`: 0–3 (3 = "3+"), reps in reserve.
+- `settings.askRir` (bool), `settings.restSound`, `settings.soundVolume`.

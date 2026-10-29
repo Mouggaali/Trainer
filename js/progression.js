@@ -14,6 +14,7 @@ const DELOAD_AFTER = 3; // consecutive missed sessions at the same top weight
 const r2 = (v) => Math.round(v * 100) / 100;
 export const roundTo = (v, step) => r2(Math.round(v / step) * step);
 const fmt = (v) => String(r2(v));
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 export function e1rm(kg, reps) {
   if (!kg || !reps) return 0;
@@ -35,7 +36,19 @@ export function incrementFor(ex, topKg) {
 export const workingSets = (sets) => sets.filter((s) => s.done && !s.warmup);
 const targetReps = (s) => s?.target?.reps ?? s?.reps ?? 0;
 const topKg = (session) => Math.max(0, ...workingSets(session.sets).map((s) => s.kg || 0));
+/** Average RIR (reps in reserve, 3 = "3+") of the sets that have one; null when none recorded. */
+const avgRir = (sets) => {
+  const v = sets.map((s) => s.rir).filter((r) => r != null);
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+};
 
+/** Double step for an "easy" session, but never more than 15% of the weight (small cable/dumbbell weights). */
+const bigStep = (ex, top, delta) => (!ex.increment && delta * 2 <= top * 0.15 ? r2(delta * 2) : delta);
+
+/** A rep range {min, max} or null. */
+export const validRange = (r) => (r && r.min > 0 && r.max >= r.min ? r : null);
+
+/** The session reached its own targets (all planned working sets, each at its target reps). Used by XP too. */
 export function sessionHit(session) {
   const w = workingSets(session.sets);
   if (!w.length) return false;
@@ -43,14 +56,31 @@ export function sessionHit(session) {
   return w.length >= need && w.every((s) => (s.reps || 0) >= targetReps(s));
 }
 
+/** Range mode: every planned working set reached the top of the range. */
+function rangeTopped(session, range) {
+  const w = workingSets(session.sets);
+  const need = session.targetSets || w.length;
+  return w.length > 0 && w.length >= need && w.every((s) => (s.reps || 0) >= range.max);
+}
+
+/** Range mode: a set fell below the bottom of the range, or planned sets are missing. */
+function rangeMissed(session, range) {
+  const w = workingSets(session.sets);
+  const need = session.targetSets || w.length;
+  return w.length < need || w.some((s) => (s.reps || 0) < range.min);
+}
+
 /**
  * @param ex        exercise (equipment, lower, increment)
  * @param sessions  previous sessions of this exercise, newest first
  * @param planned   planned sets [{kg, reps, warmup}] (template)
- * @returns {{type:'new'|'increase'|'hold'|'deload', title, message, delta, sets:[{kg, reps, warmup}]}}
+ * @param range     optional rep range {min, max} → double progression (reps first, then weight)
+ * @returns {{type:'new'|'increase'|'reps'|'hold'|'deload', title, message, delta, range, sets:[{kg, reps, warmup}]}}
  */
-export function recommend(ex, sessions, planned) {
+export function recommend(ex, sessions, planned, range = null) {
   planned = planned?.length ? planned : [{ kg: null, reps: 10 }, { kg: null, reps: 10 }, { kg: null, reps: 10 }];
+  range = validRange(range);
+  if (range) return recommendRange(ex, sessions, planned, range);
 
   if (!sessions.length) {
     return {
@@ -58,6 +88,7 @@ export function recommend(ex, sessions, planned) {
       title: 'Eerste sessie',
       message: 'Kies een gewicht waarbij je nog 1–2 reps over hebt. Daarna bepaal ik de stappen.',
       delta: 0,
+      range: null,
       sets: planned.map((p) => ({ kg: p.kg, reps: p.reps, warmup: !!p.warmup })),
     };
   }
@@ -67,6 +98,7 @@ export function recommend(ex, sessions, planned) {
   const top = topKg(last);
   const bodyweight = top === 0;
   const hit = sessionHit(last);
+  const rir = avgRir(lastW);
 
   let type, title, message, delta = 0;
   if (hit) {
@@ -79,12 +111,14 @@ export function recommend(ex, sessions, planned) {
         : 'Alle sets gehaald. Probeer per set 1 rep meer.';
     } else {
       const surplus = Math.min(...lastW.map((s) => (s.reps || 0) - targetReps(s)));
+      const easy = surplus >= 3 || (rir != null && rir >= 3);
       delta = incrementFor(ex, top);
-      if (surplus >= 3 && !ex.increment) delta = r2(delta * 2);
+      if (easy) delta = bigStep(ex, top, delta);
       title = `+${fmt(delta)} kg`;
-      message = surplus >= 3
-        ? `Ruim gehaald (${surplus}+ reps over op elke set). Grotere stap omhoog.`
-        : 'Alle sets en reps gehaald vorige keer. Tijd voor meer gewicht.';
+      if (surplus >= 3) message = `Ruim gehaald (${surplus}+ reps over op elke set). Grotere stap omhoog.`;
+      else if (rir != null && rir >= 3) message = 'Alle reps gehaald met 3+ reps over. Grotere stap omhoog.';
+      else if (rir === 0) message = 'Gehaald, maar tot het gaatje. Kleine stap omhoog; houd 1–2 reps over voor herstel.';
+      else message = 'Alle sets en reps gehaald vorige keer. Tijd voor meer gewicht.';
     }
   } else {
     let streak = 0;
@@ -125,5 +159,86 @@ export function recommend(ex, sessions, planned) {
     return { kg: kg ?? null, reps, warmup: false };
   });
 
-  return { type, title, message, delta, sets };
+  return { type, title, message, delta, range: null, sets };
+}
+
+/** Double progression inside a rep range: add reps until every set hits `max`, then add weight and go back to `min`. */
+function recommendRange(ex, sessions, planned, range) {
+  const { min, max } = range;
+  if (!sessions.length) {
+    return {
+      type: 'new',
+      title: 'Eerste sessie',
+      message: `Kies een gewicht waarmee je ${min}–${max} reps haalt met nog 1–2 reps over.`,
+      delta: 0,
+      range,
+      sets: planned.map((p) => ({ kg: p.kg, reps: p.warmup ? p.reps : clamp(p.reps ?? min, min, max), warmup: !!p.warmup })),
+    };
+  }
+
+  const last = sessions[0];
+  const lastW = workingSets(last.sets);
+  const top = topKg(last);
+  const bodyweight = top === 0;
+  const rir = avgRir(lastW);
+
+  let type, title, message, delta = 0, bump = 1;
+  if (rangeTopped(last, range)) {
+    type = 'increase';
+    if (bodyweight) {
+      title = 'Bovenkant bereikt';
+      message = `Alle sets op ${max} reps. Voeg gewicht toe (bv. 2.5–5 kg) en begin weer op ${min} reps.`;
+    } else {
+      delta = incrementFor(ex, top);
+      if (rir != null && rir >= 3) delta = bigStep(ex, top, delta);
+      title = `+${fmt(delta)} kg · ${min} reps`;
+      message = rir != null && rir >= 3
+        ? `Alle sets op ${max} reps met 3+ reps over. Grotere stap omhoog, terug naar ${min} reps.`
+        : `Alle sets op ${max} reps gehaald. Meer gewicht en terug naar ${min} reps.`;
+    }
+  } else if (rangeMissed(last, range)) {
+    let streak = 0;
+    for (const s of sessions) {
+      if (rangeMissed(s, range) && topKg(s) === top) streak++;
+      else break;
+    }
+    if (streak >= DELOAD_AFTER && !bodyweight) {
+      type = 'deload';
+      title = 'Deload −10%';
+      message = `${streak}× onder de ${min} reps op ${fmt(top)} kg. Even terug en sterker opbouwen.`;
+    } else {
+      type = 'hold';
+      title = `Zelfde gewicht · ${min}+ reps`;
+      message = `Niet elke set haalde ${min} reps. Zelfde gewicht, eerst alle sets binnen ${min}–${max} reps.`;
+    }
+  } else {
+    type = 'reps';
+    bump = rir != null && rir >= 3 ? 2 : 1;
+    title = `+${bump} rep${bump > 1 ? 's' : ''} per set`;
+    message = bump > 1
+      ? `Ruim binnen ${min}–${max} reps met 3+ reps over. Zelfde gewicht, 2 reps meer per set.`
+      : `Zelfde gewicht, probeer per set 1 rep meer (doel: ${max} reps op alle sets).`;
+  }
+
+  const step = ROUND[ex.equipment] || 0.5;
+  let wi = 0;
+  const sets = planned.map((p) => {
+    if (p.warmup) return { kg: p.kg, reps: p.reps, warmup: true };
+    const base = lastW.length ? lastW[Math.min(wi, lastW.length - 1)] : null;
+    wi++;
+    const baseKg = base?.kg ?? p.kg;
+    let kg = baseKg;
+    let reps = min;
+    if (type === 'increase') {
+      if (baseKg) kg = r2(baseKg + delta);
+      reps = bodyweight ? max : min;
+    } else if (type === 'deload') {
+      if (baseKg) kg = roundTo(baseKg * 0.9, step);
+    } else if (type === 'reps') {
+      reps = clamp((base?.reps ?? min) + bump, min, max);
+    }
+    return { kg: kg ?? null, reps, warmup: false };
+  });
+
+  return { type, title, message, delta, range, sets };
 }

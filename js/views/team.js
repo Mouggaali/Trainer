@@ -3,6 +3,7 @@ import { esc, on, icon, sheetPromise, toast } from '../ui.js';
 import { computeTeam, WEEK_SET_CAP, EVOLVE_AT, XP } from '../game/xp.js';
 import { MONSTERS, monsterSprite, monsterName } from '../game/monsters.js';
 import { trainedExercises, weekStreak } from '../stats.js';
+import { computeBadges, badgeSvg } from '../game/badges.js';
 
 const nick = () => getState().profile.monsterNames || {};
 export const pct = (into, needed) => (needed ? Math.max(0, Math.min(100, (into / needed) * 100)) : 100);
@@ -36,8 +37,21 @@ export function renderParty() {
       <div class="tc-row"><span class="tc-label">TRAININGEN</span><span>${s.workouts.length}</span></div>
       <div class="tc-row"><span class="tc-label">STREAK</span><span>${weekStreak()} wk</span></div>
     </section>
+    ${badgeCase()}
     <h2 class="section-title">Team</h2>
     <div class="party">${slots}</div>`;
+}
+
+function badgeCase() {
+  const badges = computeBadges();
+  const got = badges.filter((b) => b.earned).length;
+  return `<section class="badge-case">
+    <div class="badge-case-head"><span>BADGES</span><span>${got}/${badges.length}</span></div>
+    <div class="badge-grid">${badges.map((b) => `
+      <button class="badge-slot ${b.earned ? 'on' : ''}" data-action="badge-info" data-id="${b.id}" aria-label="${esc(b.name)}-badge${b.earned ? ' (behaald)' : ''}">
+        ${badgeSvg(b.id, b.earned, 40)}
+      </button>`).join('')}</div>
+  </section>`;
 }
 
 export function renderMonsterDetail(muscle) {
@@ -111,6 +125,20 @@ export function renderMonsterDetail(muscle) {
 }
 
 on({
+  'badge-info': (el) => {
+    const b = computeBadges().find((x) => x.id === el.dataset.id);
+    if (!b) return;
+    const p = b.noData ? 0 : Math.min(100, (b.cur / b.goal) * 100);
+    sheetPromise(`
+      <div class="badge-sheet">
+        ${badgeSvg(b.id, b.earned, 96)}
+        <h3 class="sheet-title">${esc(b.name.toUpperCase())}-BADGE</h3>
+        <p class="sheet-text">${esc(b.desc)}</p>
+        <div class="exp-bar"><i style="width:${p}%"></i></div>
+        <p class="muted small">${b.earned ? 'Behaald! ' : ''}${esc(b.text)}</p>
+        <div class="sheet-actions"><button class="btn btn-secondary btn-block" data-action="sheet-dismiss">Sluiten</button></div>
+      </div>`);
+  },
   'mon-rename': async (el) => {
     const muscle = el.dataset.m;
     const t = computeTeam().team.find((x) => x.muscle === muscle);

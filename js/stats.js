@@ -91,3 +91,12 @@ export function trainedExercises() {
   }
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ id, count: n }));
 }
+
+/** Exercises in workout `w` whose best e1RM beats every earlier workout (by start time). */
+export function workoutPrs(w, workouts) {
+  const earlier = workouts.filter((x) => x.id !== w.id && x.startedAt < w.startedAt);
+  return w.exercises.filter((e) => {
+    const before = Math.max(0, ...earlier.flatMap((x) => x.exercises.filter((y) => y.exerciseId === e.exerciseId).map((y) => bestE1rm(y.sets))));
+    return before > 0 && bestE1rm(e.sets) > before + 0.01;
+  }).map((e) => e.exerciseId);
+}
