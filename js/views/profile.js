@@ -57,6 +57,7 @@ export function renderProfile() {
     </header>
     ${renderTrainerCard()}
     <div class="muted small sync-line" data-sync-status>${esc(statusText())}</div>
+    ${renderTeamParty()}
 
     <section class="stat-grid stat-grid-3">
       <div class="stat"><div class="stat-label">Deze week</div><div class="stat-val">${thisWeek.count}<small>/${goal}</small></div></div>
@@ -77,7 +78,6 @@ export function renderProfile() {
 
     ${records ? `<section class="card"><div class="card-head"><h2>${icon('trophy')} Records (e1RM)</h2></div><div class="list list-flat">${records}</div></section>` : ''}
 
-    ${renderTeamParty()}
     ${badgeCase()}`;
 }
 
