@@ -147,8 +147,7 @@ export async function mountSettings() {
 
 function screenDebug() {
   const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-  const gap = getComputedStyle(document.documentElement).getPropertyValue('--ios-gap').trim() || '0px';
-  return `${innerHeight}/${screen.height}${standalone ? ' · app' : ''} · gat ${gap}`;
+  return `${innerHeight}/${screen.height}${standalone ? ' · app' : ''}`;
 }
 
 function syncCard() {
