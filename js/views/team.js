@@ -2,7 +2,7 @@ import { getState, update, allExercises } from '../store.js';
 import { esc, on, icon, sheetPromise, toast } from '../ui.js';
 import { computeTeam, WEEK_SET_CAP, EVOLVE_AT, XP } from '../game/xp.js';
 import { MONSTERS, monsterSprite, monsterName } from '../game/monsters.js';
-import { trainedExercises, weekStreak } from '../stats.js';
+import { trainedExercises } from '../stats.js';
 import { computeBadges, badgeSvg } from '../game/badges.js';
 
 const nick = () => getState().profile.monsterNames || {};
@@ -12,11 +12,23 @@ export function expBar(into, needed, cls = '') {
   return `<div class="exp-bar ${cls}"><i style="width:${pct(into, needed)}%"></i></div>`;
 }
 
-/** FireRed party screen + trainer card, shown at the top of Profiel. */
-export function renderParty() {
+/** Trainer card at the top of the Team tab. */
+export function renderTrainerCard() {
   const s = getState();
-  const { team, trainerLevel, totalXp } = computeTeam(s);
+  const { trainerLevel, totalXp } = computeTeam(s);
   const name = s.profile.name || 'Trainer';
+  return `
+    <section class="trainer-card">
+      <div class="tc-row"><span class="tc-label">TRAINER</span><span class="tc-name">${esc(name)}</span></div>
+      <div class="tc-row"><span class="tc-label">LEVEL</span><span>${trainerLevel}</span></div>
+      <div class="tc-row"><span class="tc-label">EXP.</span><span>${totalXp}</span></div>
+      <div class="tc-row"><span class="tc-label">TRAININGEN</span><span>${s.workouts.length}</span></div>
+    </section>`;
+}
+
+/** FireRed party screen: the 6 monsters. */
+export function renderTeamParty() {
+  const { team } = computeTeam(getState());
   const slots = team.map((t) => {
     const m = MONSTERS[t.muscle];
     return `<button class="party-slot" data-action="go" data-href="#/monster/${encodeURIComponent(t.muscle)}">
@@ -30,19 +42,11 @@ export function renderParty() {
     </button>`;
   }).join('');
   return `
-    <section class="trainer-card">
-      <div class="tc-row"><span class="tc-label">TRAINER</span><span class="tc-name">${esc(name)}</span></div>
-      <div class="tc-row"><span class="tc-label">LEVEL</span><span>${trainerLevel}</span></div>
-      <div class="tc-row"><span class="tc-label">EXP.</span><span>${totalXp}</span></div>
-      <div class="tc-row"><span class="tc-label">TRAININGEN</span><span>${s.workouts.length}</span></div>
-      <div class="tc-row"><span class="tc-label">STREAK</span><span>${weekStreak()} wk</span></div>
-    </section>
-    ${badgeCase()}
     <h2 class="section-title">Team</h2>
     <div class="party">${slots}</div>`;
 }
 
-function badgeCase() {
+export function badgeCase() {
   const badges = computeBadges();
   const got = badges.filter((b) => b.earned).length;
   return `<section class="badge-case">

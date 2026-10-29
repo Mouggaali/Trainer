@@ -4,7 +4,7 @@ import { barChart, lineChart } from '../charts.js';
 import { workingSets } from '../progression.js';
 import { weeklyStats, weekStreak, bestE1rm, exerciseRecords, trainedExercises, setVolume } from '../stats.js';
 import { REST_OPTIONS, restLabel } from './templates.js';
-import { renderParty } from './team.js';
+import { renderTrainerCard, renderTeamParty, badgeCase } from './team.js';
 import { pushStatus, enablePush, disablePush } from '../push.js';
 import { SOUNDS, previewSound } from '../sound.js';
 import { syncInfo, statusText, setNewPassword, syncNow, logout } from '../sync.js';
@@ -55,7 +55,7 @@ export function renderProfile() {
       <h1>Team</h1>
       <button class="icon-btn accent" data-action="go" data-href="#/settings" aria-label="Instellingen">${icon('gear')}</button>
     </header>
-    ${renderParty()}
+    ${renderTrainerCard()}
     <div class="muted small sync-line" data-sync-status>${esc(statusText())}</div>
 
     <section class="stat-grid stat-grid-3">
@@ -77,9 +77,8 @@ export function renderProfile() {
 
     ${records ? `<section class="card"><div class="card-head"><h2>${icon('trophy')} Records (e1RM)</h2></div><div class="list list-flat">${records}</div></section>` : ''}
 
-    <button class="card card-tap row-between" data-action="go" data-href="#/body">
-      <div><strong>Lichaam</strong><div class="muted small">Gewicht en omtrekmaten bijhouden</div></div>${icon('chevronRight')}
-    </button>`;
+    ${renderTeamParty()}
+    ${badgeCase()}`;
 }
 
 export function renderSettings() {
