@@ -53,7 +53,7 @@
 
   --px: 3px;                 /* pixel unit for borders */
   --radius: 0;
-  --tab-h: 64px;
+  --tab-h: 54px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 
@@ -415,12 +415,12 @@ body[data-route="active"] #rest-bar { padding-bottom: calc(var(--safe-b) + 10px)
 }
 body[data-route="active"] #tabbar { display: none; }
 .tab {
-  position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  color: var(--muted); font: 7px/1 var(--font-pixel); max-width: 110px; padding-top: 4px; white-space: nowrap;
+  position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  color: var(--muted); font: 7px/1 var(--font-pixel); max-width: 110px; padding-top: 6px; white-space: nowrap;
 }
 .tab .ic { width: 22px; height: 22px; }
 .tab.on { color: var(--fire); }
-.tab.on::before { content: ""; position: absolute; top: 8px; left: 50%; width: 24px; height: 4px; margin-left: -12px; background: var(--fire); }
+.tab.on::before { content: ""; position: absolute; top: 6px; left: 50%; width: 24px; height: 4px; margin-left: -12px; background: var(--fire); }
 .tab.on .ic { color: var(--fire); }
 .tab:active { background: var(--exp-soft); }
 .tab-main .ic { width: 26px; height: 26px; stroke-width: 2.6; }
@@ -649,3 +649,7 @@ code { background: var(--paper-2); padding: 0 6px; font: 19px var(--font-body); 
   .evolve-flash { animation-duration: .4s; }
   .sheet, .sheet-backdrop { animation: none; }
 }
+
+/* iOS home-screen bug: the app window is shorter than the screen, so the home-indicator area is already
+   outside the app (the blue strip). No bottom safe-area padding needed then. Set by checkShortViewport() in app.js. */
+html.ios-short { --safe-b: 0px; }

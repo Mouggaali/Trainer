@@ -34,9 +34,10 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
   `supabase/functions/send-rest-push` versturen Web Push; `sw.js` toont hem. Setup: DATABASE_SETUP.md.
   Geheimen (`supabase/functions/.env`, `supabase/*.local.sql`) zijn gitignored.
 - **Hosting**: GitHub Pages via `.github/workflows/deploy.yml` → https://mouggaali.github.io/Trainer/
-- **iOS statusbalk**: `apple-mobile-web-app-status-bar-style` = `black`, níet `black-translucent`: daarmee is het
-  webvenster van de beginscherm-app 1 statusbalk (59pt) korter dan het scherm → strook onder de tabbalk die je
-  met CSS niet kunt vullen. Debugregel met schermmaten staat onderaan Instellingen.
+- **iOS-strook onder de tabbalk**: in de beginscherm-app (status-bar-style `black-translucent`) is het webvenster op
+  recente iOS 1 statusbalk (59pt) korter dan het scherm; die strook valt buiten de app en is met CSS niet te vullen
+  (uitrekken knipt de tabbalk af; `black` wordt pas na opnieuw toevoegen gelezen en hielp niet). Geaccepteerd:
+  `html.ios-short` zet `--safe-b` op 0 zodat de tabbalk compact blijft. Schermmaten staan onderaan Instellingen.
 - **Layout**: de pagina scrolt zelf nooit; `#view` is de scroller en de werk-/rustbalk + tabbalk zijn flex-kinderen
   eronder (`position: fixed` balken driften op iOS los van de scrollende pagina). Nieuwe overlays mogen wel fixed.
 - **PWA**: `manifest.webmanifest` + `sw.js` (network-first) → installeerbaar op het beginscherm.

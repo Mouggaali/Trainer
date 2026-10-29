@@ -181,6 +181,16 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet
 window.addEventListener('hashchange', () => { closeSheet(); view.scrollTop = 0; render(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); syncWakeLock(); });
 
+// iOS home-screen bug: the app window can be one status bar shorter than the screen; the home indicator then
+// sits outside the app and the tabbar needs no extra bottom padding (see html.ios-short in styles.css).
+function checkShortViewport() {
+  const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  const short = standalone && innerHeight > innerWidth && screen.height - innerHeight > 20;
+  document.documentElement.classList.toggle('ios-short', short);
+}
+checkShortViewport();
+addEventListener('resize', checkShortViewport);
+
 setRerender(render);
 subscribe(render);
 onSyncChange((kind) => {
