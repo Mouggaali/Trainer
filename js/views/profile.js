@@ -120,7 +120,7 @@ export function renderSettings() {
       <label class="btn btn-soft btn-block file-btn">${icon('upload')} Importeer back-up<input type="file" accept="application/json,.json" data-input="data-import" hidden></label>
       <button class="btn btn-danger-soft btn-block" data-action="data-reset">${icon('trash')} Alle data wissen</button>
     </section>
-    <p class="muted small center">Trainer v0.1</p>`;
+    <p class="muted small center">Trainer v0.4 · scherm ${screenDebug()}</p>`;
 }
 
 const PUSH_TEXT = {
@@ -143,6 +143,12 @@ export async function mountSettings() {
     <p class="muted small">${PUSH_TEXT[st]}</p>
     ${st === 'off' ? '<button class="btn btn-primary btn-block" data-action="push-on">Meldingen aanzetten</button>' : ''}
     ${st === 'on' ? '<button class="btn btn-secondary btn-block" data-action="push-off">Meldingen uitzetten</button>' : ''}`;
+}
+
+function screenDebug() {
+  const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  const gap = getComputedStyle(document.documentElement).getPropertyValue('--ios-gap').trim() || '0px';
+  return `${innerHeight}/${screen.height}${standalone ? ' · app' : ''} · gat ${gap}`;
 }
 
 function syncCard() {

@@ -181,6 +181,23 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet
 window.addEventListener('hashchange', () => { closeSheet(); view.scrollTop = 0; render(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); syncWakeLock(); });
 
+// iOS home-screen app: some iOS versions make the layout viewport shorter than the screen (by about the
+// status-bar height), leaving a strip under the tabbar. Measure the gap and let the body extend over it.
+export function screenInfo() {
+  const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  const portrait = innerHeight > innerWidth;
+  const raw = screen.height - innerHeight;
+  const gap = standalone && portrait && raw > 0 && raw <= 100 ? raw : 0;
+  return { standalone, inner: innerHeight, screen: screen.height, gap };
+}
+function fixStandaloneGap() {
+  document.documentElement.style.setProperty('--ios-gap', `${screenInfo().gap}px`);
+}
+fixStandaloneGap();
+setTimeout(fixStandaloneGap, 300);
+addEventListener('resize', fixStandaloneGap);
+addEventListener('orientationchange', () => setTimeout(fixStandaloneGap, 300));
+
 setRerender(render);
 subscribe(render);
 onSyncChange((kind) => {

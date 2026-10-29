@@ -95,7 +95,8 @@ html { height: 100%; overflow: hidden; }
 body {
   /* Pinned to all four screen edges instead of height:100dvh — in the iOS home-screen app
      (black-translucent status bar) 100dvh is the screen minus the status bar, leaving a gap under the tabbar. */
-  position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden;
+  position: fixed; inset: 0; bottom: calc(-1 * var(--ios-gap, 0px)); /* --ios-gap: see fixStandaloneGap() in app.js */
+  display: flex; flex-direction: column; overflow: hidden;
   font: 21px/1.15 var(--font-body);
   -webkit-font-smoothing: none;
   overscroll-behavior: none;
