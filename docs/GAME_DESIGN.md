@@ -53,7 +53,9 @@ na 8 weken Borst/Benen ±Lv18, niet-getrainde groepen ±Lv8. Lv36 ≈ 6–7 maan
   `unlockSound()` draait bij elke set-tik (iOS wil een tik voor het eerste afspelen). Bij een vergrendeld scherm
   bevriest iOS de app: dan is de pushmelding (systeemgeluid, volgt stilteschakelaar/Focus) het signaal en klinkt er
   bij heropenen géén verlate bel. Bewust geen rust-lang audiospoor om op slot te kunnen bellen: dat pauzeert de
-  muziek van de gebruiker (die altijd muziek luistert), en `playback` doet dat ook.
+  muziek van de gebruiker (die altijd muziek luistert), en `playback` doet dat ook. Standaard staat de sessie op
+  `ambient` en de AudioContext (game-blips, `js/ui.js`) draait alleen tijdens een blip: een lopende context in de
+  `auto`-sessie pauzeerde de muziek bij het openen van de app. Pushmeldingen hebben altijd het iOS-systeemgeluid.
 
 ## Badges (`js/game/badges.js`)
 8 eigen badges (pixel-medailles, 12×12 → SVG), afgeleid uit de historie zoals XP:

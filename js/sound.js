@@ -91,6 +91,9 @@ function setSession(type) {
   try { if (navigator.audioSession) navigator.audioSession.type = type; } catch { /* not supported */ }
 }
 
+// Default: mix with the user's music (the default "auto" session can pause it when the app opens).
+setSession('ambient');
+
 let el = null;
 let unlocked = false;
 let cache = { key: '', url: '' };
@@ -101,7 +104,7 @@ function audioEl() {
     el = new Audio();
     el.preload = 'auto';
     el.setAttribute('playsinline', '');
-    const release = () => setSession('auto');
+    const release = () => setSession('ambient');
     el.addEventListener('ended', release);
     el.addEventListener('error', release);
   }
@@ -130,7 +133,7 @@ export function unlockSound() {
     setSession('ambient');
     a.src = silentUrl;
     unlocked = true;
-    a.play().catch(() => { unlocked = false; setSession('auto'); });
+    a.play().catch(() => { unlocked = false; setSession('ambient'); });
   } catch { unlocked = false; }
 }
 
@@ -145,7 +148,7 @@ export function playRestSound({ id, volume } = {}) {
     a.src = soundUrl(sound, vol);
     a.currentTime = 0;
     const p = a.play();
-    if (p) p.catch((e) => { console.warn('Geluid kon niet starten', e); setSession('auto'); });
+    if (p) p.catch((e) => { console.warn('Geluid kon niet starten', e); setSession('ambient'); });
   } catch (e) {
     console.warn('Geluid kon niet starten', e);
   }

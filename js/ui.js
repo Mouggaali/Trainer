@@ -174,13 +174,26 @@ export function toast(msg) {
 }
 
 // ---------- Sound ----------
+// iOS: a running AudioContext in the default ("auto") audio session pauses the user's music, also when the
+// app is reopened. So: "ambient" session (mixes with music) and the context only runs while a blip plays.
 let audioCtx;
+let suspendTimer;
+function ambient() {
+  try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch { /* not supported */ }
+}
+function suspendSoon(ms) {
+  clearTimeout(suspendTimer);
+  suspendTimer = setTimeout(() => { if (audioCtx?.state === 'running') audioCtx.suspend().catch(() => {}); }, ms);
+}
 export function unlockAudio() {
   try {
+    ambient();
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    suspendSoon(1500);
   } catch { /* no audio */ }
 }
+document.addEventListener('visibilitychange', () => { if (document.hidden) suspendSoon(0); });
 
 // ---------- Game sounds (original chiptune blips, square wave) ----------
 function tone(freq, start, dur, type = 'square', vol = 0.12) {
@@ -202,7 +215,13 @@ const SFX = {
 /** Plays a game sound. Callers decide whether sound is enabled (settings.sound). */
 export function sfx(name) {
   if (!audioCtx) return;
-  try { (SFX[name] || []).forEach(([f, s, d]) => tone(f, s, d)); } catch { /* ignore */ }
+  try {
+    ambient();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const notes = SFX[name] || [];
+    notes.forEach(([f, s, d]) => tone(f, s, d));
+    suspendSoon(1000 * Math.max(0, ...notes.map(([, s, d]) => s + d)) + 500);
+  } catch { /* ignore */ }
 }
 
 // ---------- XP pop-up ----------
