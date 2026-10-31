@@ -70,12 +70,12 @@ export function renderProfile() {
         <div class="stat-sub">${lastWeek.volume ? `vorige: ${fmtVolume(lastWeek.volume)}` : ''}</div></div>
     </section>
 
-    ${volumeCard()}
-
     <section class="card">
       <div class="card-head"><div><h2>Trainingen per week</h2><div class="muted small">Doel: ${goal} per week</div></div></div>
       ${barChart({ labels: weeks.map((w) => { const d = new Date(w.start); return `${d.getDate()}/${d.getMonth() + 1}`; }), values: weeks.map((w) => w.count), goal, highlight: weeks.length - 1 })}
     </section>
+
+    ${volumeCard()}
 
     <section class="card">
       <div class="card-head"><h2>Progressie per oefening</h2></div>

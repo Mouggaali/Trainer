@@ -65,6 +65,6 @@ Belangrijkste volumemaat voor hypertrofie: harde werksets per spiergroep per wee
 - Telling: afgevinkte werkset (geen warming-up) = 1 set voor de primaire spiergroep, 0,5 voor de hulpspiergroep
   (`secondary`; die doet mee, maar minder). 'Overig' telt niet. De lopende training telt al mee.
 - Doelen (groeizone): Borst, Rug, Schouders, Armen, Benen 10–20; Core 6–12.
-- Team-tab: kaart "Sets per spiergroep" (deze/vorige week) met max. 2 tips: laagste spiergroep onder het minimum
+- Team-tab (onder "Trainingen per week"): kaart "Sets per spiergroep" (deze/vorige week) met max. 2 tips: laagste spiergroep onder het minimum
   (+ je meest gedane oefening daarvoor) en een spiergroep boven het maximum (meer levert weinig op, herstel gaat voor).
 - Monster-detail toont dezelfde telling. Los daarvan blijft de set-EXP-cap (20 primaire sets/week) in `xp.js`.
