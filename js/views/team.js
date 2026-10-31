@@ -54,7 +54,7 @@ export function badgeCase() {
     <div class="badge-case-head"><span>BADGES</span><span>${got}/${badges.length}</span></div>
     <div class="badge-grid">${badges.map((b) => `
       <button class="badge-slot ${b.earned ? 'on' : ''}" data-action="badge-info" data-id="${b.id}" aria-label="${esc(b.name)}-badge${b.earned ? ' (behaald)' : ''}">
-        ${badgeSvg(b.id, b.earned, 40)}
+        ${badgeSvg(b.id, b.earned, 60)}
       </button>`).join('')}</div>
   </section>`;
 }
@@ -121,6 +121,7 @@ export function renderMonsterDetail(muscle) {
         <div><span>Persoonlijk record</span><b>+${XP.pr}</b></div>
         <div><span>Weekdoel gehaald (heel team)</span><b>+${XP.weekGoal}</b></div>
         <div><span>Hulpspier bij basisoefening</span><b>+${XP.secondary}</b></div>
+        <div><span>Eiwitdoel gehaald (heel team, per dag)</span><b>+${XP.protein}</b></div>
       </div>
       <p class="muted small">* verdeeld over de getrainde spiergroepen.</p>
     </section>

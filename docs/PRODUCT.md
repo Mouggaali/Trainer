@@ -52,3 +52,6 @@ Eten loggen per dag in Ontbijt/Lunch/Diner/Snacks: barcode scannen (camera) of i
 Recent/Mijn producten, zelf een product toevoegen. Dagtotaal vs. doel (kcal, eiwit, koolhydraten, vet) met trainerstip,
 kopieer een maaltijd van gisteren. Doel instellen (lichaamsgegevens + aankomen/houden/afvallen) en een wekelijks slim
 caloriedoel op basis van inname en gewichtstrend. Foto-herkenning met AI is bewust (nog) niet gebouwd.
+
+Vaste maaltijden: een maaltijdblok met 2+ producten opslaan ("Opslaan als vaste maaltijd") en op de toevoegpagina met
+één tik helemaal toevoegen. Eiwitdoel gehaald = +10 EXP. voor het hele team, en een Eiwit-badge voor 7 dagen op rij.

@@ -3,9 +3,10 @@
 import { getState, getExercise } from '../store.js';
 import { sessionHit, workingSets } from '../progression.js';
 import { startOfWeek } from '../ui.js';
+import { proteinDays, localISO } from '../nutrition.js';
 
 export const TEAM = ['Borst', 'Rug', 'Schouders', 'Armen', 'Benen', 'Core'];
-export const XP = { set: 10, secondary: 5, exercise: 15, workout: 25, pr: 50, weekGoal: 50 };
+export const XP = { set: 10, secondary: 5, exercise: 15, workout: 25, pr: 50, weekGoal: 50, protein: 10 };
 export const WEEK_SET_CAP = 20; // working sets per muscle per week that earn set-XP
 export const MAX_LEVEL = 100;
 export const EVOLVE_AT = [16, 36];
@@ -73,11 +74,19 @@ function run(state, onWorkout) {
   const goal = state.settings.weeklyGoal || 3;
   const totals = zero();
   const ctx = {};
+  // Protein-goal days give every monster XP.protein; added in date order between the workouts.
+  const pdays = proteinDays(state);
+  let pi = 0;
+  const addProteinUntil = (iso) => {
+    for (; pi < pdays.length && (iso == null || pdays[pi] < iso); pi++) for (const m of TEAM) totals[m] += XP.protein;
+  };
   for (const w of [...state.workouts].sort((a, b) => a.startedAt - b.startedAt)) {
+    addProteinUntil(localISO(w.startedAt));
     const { gains, weekGoal } = gainsFor(w, ctx, goal);
     onWorkout?.(w, gains, weekGoal, totals);
     for (const m of TEAM) totals[m] += gains[m];
   }
+  addProteinUntil(null);
   return { totals, ctx };
 }
 

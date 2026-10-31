@@ -3,6 +3,7 @@ import { getState } from '../store.js';
 import { startOfWeek } from '../ui.js';
 import { computeTeam, EVOLVE_AT } from './xp.js';
 import { workoutVolume, bestE1rm } from '../stats.js';
+import { proteinDays, longestDayRun } from '../nutrition.js';
 
 const WEEK = 7 * 86400000;
 
@@ -24,6 +25,8 @@ export const BADGES = [
     glyph: ['.wwww.', '.w..w.', '.wwww.', 'wwwwww', 'wwwwww', '.wwww.'] },
   { id: 'kampioen', name: 'Kampioen', color: '#f8d030', shade: '#b08000', desc: 'Rond 50 trainingen af.',
     glyph: ['wwwwww', 'wwwwww', '.wwww.', '..ww..', '..ww..', '.wwww.'] },
+  { id: 'eiwit', name: 'Eiwit', color: '#e87898', shade: '#a83858', desc: 'Haal 7 dagen op rij je eiwitdoel.',
+    glyph: ['..ww..', '.wwww.', '.wwww.', 'wwwwww', 'wwwwww', '.wwww.'] },
 ];
 
 /** Longest run of consecutive weeks that reached the weekly goal. */
@@ -58,6 +61,7 @@ export function computeBadges(state = getState()) {
   const bw = latestBodyweight(state);
   const bench = Math.max(0, ...ws.flatMap((w) => w.exercises.filter((e) => e.exerciseId === 'bench-press-barbell').map((e) => bestE1rm(e.sets))));
   const ton = Math.max(0, ...ws.map(workoutVolume));
+  const proteinRun = longestDayRun(proteinDays(state));
   const r = Math.round;
 
   const P = {
@@ -71,6 +75,7 @@ export function computeBadges(state = getState()) {
       : { cur: 0, goal: 1, text: 'Log eerst je lichaamsgewicht bij Lichaam.', noData: true },
     ton: { cur: ton, goal: 5000, text: `Beste training: ${r(ton).toLocaleString('nl-NL')}/5.000 kg` },
     kampioen: { cur: n, goal: 50, text: `${n}/50 trainingen` },
+    eiwit: { cur: proteinRun, goal: 7, text: `Langste reeks: ${Math.min(proteinRun, 7)}/7 dagen` },
   };
   return BADGES.map((b) => {
     const p = P[b.id];

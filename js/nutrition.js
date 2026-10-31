@@ -129,3 +129,41 @@ export function adaptiveCheck(state, now = Date.now()) {
   const after = targets({ ...state, settings: { ...state.settings, nutrition: { ...n, tdee } } })?.kcal;
   return { due: true, ok: true, tdee, before, after, kgPerWeek: trend.kgPerWeek, avgKcal: Math.round(intake.avgKcal), estimate: Math.round(estimate) };
 }
+
+/** Bodyweight on a date: last weighing on or before it, else the first weighing (null without weighings). */
+function weightOn(sortedBw, iso) {
+  let kg = sortedBw[0]?.kg ?? null;
+  for (const b of sortedBw) { if (b.date <= iso) kg = b.kg; else break; }
+  return kg;
+}
+
+/** Protein target (g) for a date, or null without a weighing. Same rounding as targets(). */
+export function proteinGoalOn(state, iso) {
+  const bw = [...(state.bodyweight || [])].sort((a, b) => a.date.localeCompare(b.date));
+  const kg = weightOn(bw, iso);
+  return kg == null ? null : round((state.settings.nutrition?.proteinPerKg || 2) * kg);
+}
+
+/** Dates (YYYY-MM-DD, sorted) on which logged protein reached that day's protein target. */
+export function proteinDays(state) {
+  const bw = [...(state.bodyweight || [])].sort((a, b) => a.date.localeCompare(b.date));
+  if (!bw.length) return [];
+  const ppk = state.settings.nutrition?.proteinPerKg || 2;
+  const perDay = new Map();
+  for (const e of state.foodLog || []) perDay.set(e.date, (perDay.get(e.date) || 0) + (e.protein || 0));
+  return [...perDay.entries()]
+    .filter(([iso, p]) => p >= round(ppk * weightOn(bw, iso)))
+    .map(([iso]) => iso)
+    .sort();
+}
+
+/** Longest run of consecutive calendar days in a sorted list of YYYY-MM-DD dates. */
+export function longestDayRun(dates) {
+  let best = 0, run = 0, prev = null;
+  for (const iso of dates) {
+    run = prev && Math.round((isoToMs(iso) - isoToMs(prev)) / DAY) === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+    prev = iso;
+  }
+  return best;
+}

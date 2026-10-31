@@ -58,9 +58,16 @@ na 8 weken Borst/Benen ±Lv18, niet-getrainde groepen ±Lv8. Lv36 ≈ 6–7 maan
   `auto`-sessie pauzeerde de muziek bij het openen van de app. Pushmeldingen hebben altijd het iOS-systeemgeluid.
 
 ## Badges (`js/game/badges.js`)
-8 eigen badges (pixel-medailles, 12×12 → SVG), afgeleid uit de historie zoals XP:
+9 eigen badges (pixel-medailles, 12×12 → SVG, koffer 3×3), afgeleid uit de historie zoals XP:
 Start (1e training) · Ritme (4 weken op rij weekdoel) · IJzer (10 weken) · Evolutie (monster Lv16) ·
 Team (alle monsters Lv10+) · Bank (Bench Press (Barbell) e1RM ≥ laatste lichaamsgewicht) ·
-Ton (5.000 kg in één training) · Kampioen (50 trainingen).
+Ton (5.000 kg in één training) · Kampioen (50 trainingen) · Eiwit (7 dagen op rij eiwitdoel gehaald).
 Badgekoffer op het Team-scherm (tik = eis + voortgang); nieuwe badges verschijnen in de eindreeks na een training
 (`newBadges(workoutId)` vergelijkt de historie vóór en na die training).
+
+## Eiwit → EXP (`js/nutrition.js` → `proteinDays`, `js/game/xp.js`)
+- Eiwitdag = dag waarop het gelogde eiwit ≥ `proteinPerKg` × gewicht van die dag (laatste weging op/vóór die datum).
+  Zonder weging geen eiwitdagen.
+- Elke eiwitdag: +10 EXP. (`XP.protein`) voor **elk** monster, afgeleid (niet opgeslagen); in `run()` op datumvolgorde
+  tussen de trainingen gevoegd, zodat het eindscherm na een training dezelfde levels toont als het Team.
+- Zodra een voedingsregel de dag tot eiwitdag maakt: FireRed-dialoog (EIWITDOEL, level-ups, evolutie, Eiwit-badge).

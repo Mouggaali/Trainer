@@ -135,7 +135,7 @@ textarea { width: 100%; background: var(--paper-2); border: 0; box-shadow: var(-
 /* ---------- Badges ---------- */
 .badge-case { margin: 0 3px 16px; padding: 10px 12px 12px; background: #3a4458; box-shadow: 0 0 0 3px var(--ink), inset 0 0 0 3px #59647c; }
 .badge-case-head { display: flex; justify-content: space-between; font: 9px/1.8 var(--font-pixel); color: #f8d030; text-shadow: 2px 2px 0 var(--ink); margin-bottom: 8px; }
-.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .badge-slot { display: grid; place-items: center; aspect-ratio: 1; background: #2a3242; box-shadow: inset 0 0 0 2px #1c2230; min-height: 56px; }
 .badge-slot.on { background: #45506a; }
 .badge-slot:not(.on) .badge-svg { opacity: .7; }

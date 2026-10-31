@@ -56,6 +56,7 @@ function defaults() {
     measurements: [],
     foods: [],
     foodLog: [],
+    meals: [],
     active: null,
   };
 }

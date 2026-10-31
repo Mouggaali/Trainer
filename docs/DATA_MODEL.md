@@ -68,3 +68,5 @@ Zie `supabase/schema.sql` voor de tabellen die bij cloud-sync worden gebruikt.
   — voedingswaarden als momentopname.
 - `profile.body`: `{ sex: 'm'|'f', birthYear, heightCm, activity: 'low'|'mid'|'high' }` (of `null`).
 - `settings.nutrition`: `{ goal: 'bulk'|'maintain'|'cut', proteinPerKg, tdee, kcalOverride, adjustedAt, history: [{ at, tdee, kcal }] }`.
+- `meals`: `[{ id, name, items: [{ foodId, name, grams, unit, per100 }], usedAt }]` — vaste maaltijden; `per100` als
+  momentopname zodat ze blijven werken als het product verdwijnt.

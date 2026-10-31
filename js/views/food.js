@@ -1,12 +1,15 @@
 // Food log (part of the Lichaam tab): day overview vs targets, add via barcode / search / own products,
 // and the adaptive calorie goal. Rules: js/nutrition.js + docs/TRAINING_PRINCIPLES.md.
 import { getState, update, uid } from '../store.js';
-import { esc, on, go, icon, fmtNum, fmtDate, todayISO, isoToTs, num, toast, sheetPromise, confirmDialog, sfx, unlockAudio } from '../ui.js';
+import { esc, on, go, icon, fmtNum, fmtDate, todayISO, isoToTs, num, toast, sheetPromise, confirmDialog, sfx, unlockAudio, dialogSequence } from '../ui.js';
 import { barChart } from '../charts.js';
 import {
   MEALS, GOALS, ACTIVITY, targets, sumEntries, nutrientsFor, latestWeight, estimateTdee, weightTrend,
-  adaptiveCheck, localISO,
+  adaptiveCheck, localISO, proteinDays,
 } from '../nutrition.js';
+import { computeTeam, XP } from '../game/xp.js';
+import { computeBadges, badgeSvg } from '../game/badges.js';
+import { monsterName } from '../game/monsters.js';
 import { productByBarcode, searchProducts, scanBarcode } from '../food-api.js';
 
 const DAY = 86400000;
@@ -43,6 +46,10 @@ function trainerLine(t, tot) {
   const p = t.protein - tot.protein;
   const k = t.kcal - tot.kcal;
   if (!tot.kcal) return 'Log je eerste maaltijd van de dag. Eiwit bij elke maaltijd helpt je spieren het meest.';
+  if (p <= 0) {
+    const rest = k > 300 ? ` Nog ${g1(k)} kcal te gaan.` : k < -250 ? ` ${g1(-k)} kcal boven je doel.` : '';
+    return `Eiwitdoel gehaald ✓ +${XP.protein} EXP. voor je team!${rest}`;
+  }
   if (p > 25) return `Nog ${g1(p)} g eiwit te gaan, bv. magere kwark, kip of een shake.`;
   if (k > 300) return `Eiwit zit goed! Nog ${g1(k)} kcal te gaan voor je doel.`;
   if (k < -250) return `${g1(-k)} kcal boven je doel. Geen ramp, het weekgemiddelde telt.`;
@@ -87,6 +94,7 @@ export function renderFood() {
           <div class="li-main"><div class="li-title">${esc(e.name)}</div>
           <div class="li-sub">${g1(e.grams)} ${unitOf(e)} · ${fmtNum(e.protein, 1)} g eiwit</div></div>
           <span class="food-kcal">${g1(e.kcal)}<small> kcal</small></span></button>`).join('')}</div>` : ''}
+      ${list.length > 1 ? `<button class="link-btn" data-action="meal-save" data-meal="${m.id}">${icon('sparkle')} Opslaan als vaste maaltijd</button>` : ''}
       ${canCopy ? `<button class="link-btn" data-action="food-copy" data-meal="${m.id}">${icon('copy')} Kopieer van ${d === todayISO() ? 'gisteren' : 'vorige dag'}</button>` : ''}
     </section>`;
   }).join('');
@@ -154,6 +162,9 @@ export function renderFoodAdd(meal = 'snack') {
     .filter((f) => !q || `${f.name} ${f.brand || ''}`.toLowerCase().includes(q))
     .sort((a, b) => (b.usedAt || 0) - (a.usedAt || 0))
     .slice(0, q ? 30 : 15);
+  const savedMeals = [...(s.meals || [])]
+    .filter((m) => !q || m.name.toLowerCase().includes(q))
+    .sort((a, b) => (b.usedAt || 0) - (a.usedAt || 0));
   const item = (f, src, i) => `<button class="list-item" data-action="food-pick" data-src="${src}" data-i="${i}" data-meal="${esc(meal)}">
     <div class="li-main"><div class="li-title">${esc(f.name)}</div>
     <div class="li-sub">${f.brand ? `${esc(f.brand)} · ` : ''}${f.per100.kcal} kcal · ${fmtNum(f.per100.protein, 1)} g eiwit /100 ${unitOf(f)}</div></div>${icon('plus', 'muted')}</button>`;
@@ -172,11 +183,15 @@ export function renderFoodAdd(meal = 'snack') {
       <button class="btn btn-secondary" data-action="food-search">${searching ? '…' : 'Zoek'}</button>
     </form>
     <button class="link-btn" data-action="food-code" data-meal="${esc(meal)}">Barcode intypen</button>
+    ${savedMeals.length ? `<h2 class="section-title">Vaste maaltijden</h2><div class="list">${savedMeals.map((sm) => `
+      <button class="list-item" data-action="meal-pick" data-id="${sm.id}" data-meal="${esc(meal)}">
+        <div class="li-main"><div class="li-title">${esc(sm.name)}</div>
+        <div class="li-sub">${sm.items.length} producten · ${g1(mealTotals(sm).kcal)} kcal · ${fmtNum(mealTotals(sm).protein, 1)} g eiwit</div></div>${icon('plus', 'muted')}</button>`).join('')}</div>` : ''}
     ${mine.length ? `<h2 class="section-title">${q ? 'Mijn producten' : 'Recent'}</h2><div class="list">${mine.map((f) => item(f, 'mine', s.foods.indexOf(f))).join('')}</div>` : ''}
     ${results ? `<h2 class="section-title">Open Food Facts</h2>${results.length
       ? `<div class="list">${results.map((f, i) => item(f, 'off', i)).join('')}</div>`
       : '<p class="empty">Niets gevonden. Probeer een andere naam of voeg het product zelf toe.</p>'}` : ''}
-    ${!mine.length && !results ? '<p class="empty">Scan een barcode of zoek een product. Wat je toevoegt, komt hier bij Recent.</p>' : ''}`;
+    ${!mine.length && !savedMeals.length && !results ? '<p class="empty">Scan een barcode of zoek een product. Wat je toevoegt, komt hier bij Recent.</p>' : ''}`;
 }
 
 export function mountFoodAdd() {
@@ -260,6 +275,7 @@ async function addFood(food, meal) {
   if (!r?.grams) return;
   food = { ...food, unit: r.unit };
   const foodId = rememberFood(food, r.grams);
+  const snap = gameSnapshot();
   update((s) => {
     s.foodLog = s.foodLog || [];
     s.foodLog.push({ id: uid(), date: day(), meal, foodId, name: food.name, grams: r.grams, unit: r.unit, ...nutrientsFor(food.per100, r.grams) });
@@ -268,6 +284,125 @@ async function addFood(food, meal) {
   query = '';
   results = null;
   go('#/body/food');
+  celebrate(snap);
+}
+
+// ---------- Protein goal → monster EXP ----------
+/** Game state before a food change, to detect a newly reached protein goal afterwards. */
+function gameSnapshot() {
+  const s = getState();
+  return {
+    days: new Set(proteinDays(s)),
+    levels: new Map(computeTeam(s).team.map((t) => [t.muscle, t])),
+    badge: computeBadges(s).find((b) => b.id === 'eiwit')?.earned,
+  };
+}
+
+async function celebrate(before) {
+  const s = getState();
+  const fresh = proteinDays(s).filter((d) => !before.days.has(d));
+  if (!fresh.length) return;
+  const sound = s.settings.sound;
+  const nicks = s.profile.monsterNames || {};
+  const when = fresh[0] === todayISO() ? '' : ` (${dayLabel(fresh[0]).toLowerCase()})`;
+  const steps = [{
+    text: `Eiwitdoel gehaald${when}! Je hele team krijgt +${XP.protein * fresh.length} EXP.`,
+    stage: '<div class="gain-banner">★ EIWITDOEL ★</div>',
+    onShow: () => sound && sfx('levelup'),
+  }];
+  for (const t of computeTeam(s).team) {
+    const b = before.levels.get(t.muscle);
+    if (b && t.level > b.level) {
+      steps.push({ text: `${monsterName(t.muscle, b.form, nicks)} is gegroeid naar Lv${t.level}!`, onShow: () => sound && sfx('levelup') });
+    }
+    if (b && t.form > b.form) {
+      steps.push({ text: `Wat? ${monsterName(t.muscle, b.form, nicks)} is geëvolueerd tot ${monsterName(t.muscle, t.form, nicks)}!`, onShow: () => sound && sfx('evolve') });
+    }
+  }
+  const badge = computeBadges(s).find((b) => b.id === 'eiwit');
+  if (badge?.earned && !before.badge) {
+    steps.push({
+      text: `Gefeliciteerd! Je hebt de EIWIT-BADGE verdiend! ${badge.desc}`,
+      stage: `<div class="gain-card badge-gain">${badgeSvg('eiwit', true, 128)}<div class="gain-banner">★ NIEUWE BADGE ★</div></div>`,
+      onShow: () => sound && sfx('levelup'),
+    });
+  }
+  await dialogSequence(steps);
+}
+
+// ---------- Fixed meals ----------
+const mealTotals = (sm) => sumEntries(sm.items.map((i) => nutrientsFor(i.per100, i.grams)));
+const per100Of = (e, f) => f?.per100 || {
+  kcal: (e.kcal / e.grams) * 100, protein: (e.protein / e.grams) * 100, carbs: (e.carbs / e.grams) * 100, fat: (e.fat / e.grams) * 100,
+};
+
+async function saveMeal(mealId) {
+  const s = getState();
+  const list = (s.foodLog || []).filter((e) => e.date === day() && e.meal === mealId);
+  if (!list.length) return;
+  const { el, result } = sheetPromise(`
+    <h3 class="sheet-title">Vaste maaltijd opslaan</h3>
+    <p class="sheet-text">${list.map((e) => `${esc(e.name)} (${g1(e.grams)} ${unitOf(e)})`).join(', ')}</p>
+    <form class="form" onsubmit="return false">
+      <label>Naam<input id="meal-name" maxlength="40" value="${esc(mealLabel(mealId))}"></label>
+      <div class="sheet-actions">
+        <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="ok">Opslaan</button>
+        <button class="btn btn-secondary btn-block" data-action="sheet-dismiss" type="button">Annuleren</button>
+      </div>
+    </form>`);
+  const input = el.querySelector('#meal-name');
+  let name = input.value;
+  input.addEventListener('input', () => { name = input.value; });
+  if ((await result) !== 'ok') return;
+  name = name.trim() || mealLabel(mealId);
+  update((st) => {
+    st.meals = st.meals || [];
+    st.meals.push({
+      id: uid(), name, usedAt: Date.now(),
+      items: list.map((e) => ({
+        foodId: e.foodId, name: e.name, grams: e.grams, unit: unitOf(e),
+        per100: per100Of(e, (st.foods || []).find((x) => x.id === e.foodId)),
+      })),
+    });
+  }, { silent: true });
+  toast(`"${name}" opgeslagen bij Vaste maaltijden`);
+}
+
+async function pickMeal(id, mealId) {
+  const sm = (getState().meals || []).find((m) => m.id === id);
+  if (!sm) return;
+  const tot = mealTotals(sm);
+  const { result } = sheetPromise(`
+    <h3 class="sheet-title">${esc(sm.name)}</h3>
+    <div class="list list-flat">${sm.items.map((i) => `<div class="list-item"><div class="li-main"><div class="li-title">${esc(i.name)}</div>
+      <div class="li-sub">${g1(i.grams)} ${unitOf(i)}</div></div><span class="food-kcal">${g1(nutrientsFor(i.per100, i.grams).kcal)}<small> kcal</small></span></div>`).join('')}</div>
+    <p class="amt-preview"><b>${g1(tot.kcal)} kcal</b> · ${fmtNum(tot.protein, 1)} g eiwit · ${fmtNum(tot.carbs, 1)} g koolh. · ${fmtNum(tot.fat, 1)} g vet</p>
+    <div class="sheet-actions">
+      <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="add">Alles toevoegen aan ${esc(mealLabel(mealId).toLowerCase())}</button>
+      <button class="btn btn-danger-soft btn-block" data-action="sheet-resolve" data-value="del">Vaste maaltijd verwijderen</button>
+      <button class="btn btn-secondary btn-block" data-action="sheet-dismiss">Annuleren</button>
+    </div>`);
+  const r = await result;
+  if (r === 'del') {
+    if (!(await confirmDialog(`"${sm.name}" verwijderen?`, 'Al gelogde maaltijden blijven staan.', 'Verwijderen', true))) return;
+    update((st) => { st.meals = st.meals.filter((m) => m.id !== id); });
+    return;
+  }
+  if (r !== 'add') return;
+  const snap = gameSnapshot();
+  update((st) => {
+    const m = st.meals.find((x) => x.id === id);
+    if (m) m.usedAt = Date.now();
+    st.foodLog = st.foodLog || [];
+    st.foodLog.push(...sm.items.map((i) => ({
+      id: uid(), date: day(), meal: mealId, foodId: i.foodId, name: i.name, grams: i.grams, unit: unitOf(i), ...nutrientsFor(i.per100, i.grams),
+    })));
+  }, { silent: true });
+  toast(`${sm.name} toegevoegd`);
+  query = '';
+  results = null;
+  go('#/body/food');
+  celebrate(snap);
 }
 
 async function productForm(meal, preset = {}) {
@@ -437,20 +572,26 @@ on({
       update((st) => { st.foodLog = st.foodLog.filter((x) => x.id !== e.id); });
       return;
     }
+    const snap = gameSnapshot();
     update((st) => {
       const x = st.foodLog.find((y) => y.id === e.id);
       if (x) Object.assign(x, { grams: r.grams, unit: r.unit }, nutrientsFor(per100, r.grams));
       const pf = x && st.foods.find((y) => y.id === x.foodId);
       if (pf) pf.unit = r.unit;
     });
+    celebrate(snap);
   },
+  'meal-save': (el) => saveMeal(el.dataset.meal),
+  'meal-pick': (el) => pickMeal(el.dataset.id, el.dataset.meal),
   'food-copy': (el) => {
     const d = day();
     const from = shiftISO(d, -1);
+    const snap = gameSnapshot();
     update((st) => {
       const src = st.foodLog.filter((e) => e.date === from && e.meal === el.dataset.meal);
       st.foodLog.push(...src.map((e) => ({ ...e, id: uid(), date: d })));
     });
     toast('Gekopieerd');
+    celebrate(snap);
   },
 });
