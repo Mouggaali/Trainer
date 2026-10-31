@@ -35,9 +35,10 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
   Geheimen (`supabase/functions/.env`, `supabase/*.local.sql`) zijn gitignored.
 - **Hosting**: GitHub Pages via `.github/workflows/deploy.yml` → https://mouggaali.github.io/Trainer/
 - **iOS-strook onder de tabbalk**: in de beginscherm-app (status-bar-style `black-translucent`) is het webvenster op
-  recente iOS 1 statusbalk (59pt) korter dan het scherm; die strook valt buiten de app en is met CSS niet te vullen
-  (uitrekken knipt de tabbalk af; `black` wordt pas na opnieuw toevoegen gelezen en hielp niet). Geaccepteerd:
-  `html.ios-short` zet `--safe-b` op 0 zodat de tabbalk compact blijft. Schermmaten staan onderaan Instellingen.
+  iOS 26 1 statusbalk (59pt) korter dan het scherm (WebKit 301108), maar alleen zolang de pagina niet hoger is dan
+  dat venster. Fix (`css/styles.css`, standalone): `html { min-height: min(100lvh, calc(100% + env(safe-area-inset-top))) }`.
+  Werkt niet: body/tabbalk uitrekken (iOS tekent niet voorbij de korte rand → labels afgeknipt), `black` status bar.
+  Vangnet: `html.ios-short` zet `--safe-b` op 0 als het venster toch kort blijft. Schermmaten onderaan Instellingen.
 - **Layout**: de pagina scrolt zelf nooit; `#view` is de scroller en de werk-/rustbalk + tabbalk zijn flex-kinderen
   eronder (`position: fixed` balken driften op iOS los van de scrollende pagina). Nieuwe overlays mogen wel fixed.
 - **PWA**: `manifest.webmanifest` + `sw.js` (network-first) → installeerbaar op het beginscherm.

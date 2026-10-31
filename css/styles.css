@@ -92,6 +92,12 @@ html, body {
 /* App shell: the page itself never scrolls. #view scrolls; the workout/rest bar and the tabbar are
    fixed parts below it. (position:fixed bars drift away from a scrolling document on iOS.) */
 html { height: 100%; overflow: hidden; }
+/* iOS 26 home-screen app (WebKit bug 301108): the window is one status bar shorter than the screen while the
+   page is no taller than that window. Making the page as tall as the screen gives the app the full screen.
+   The min() cap keeps it from scrolling when the status-bar inset is 0. */
+@media (display-mode: standalone) {
+  html { height: auto; min-height: min(100lvh, calc(100% + env(safe-area-inset-top))); }
+}
 body {
   /* Pinned to all four edges of the viewport (no 100dvh: unreliable in the iOS home-screen app). */
   position: fixed; inset: 0;
