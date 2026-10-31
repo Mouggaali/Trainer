@@ -44,8 +44,9 @@ function defaults() {
   return {
     version: VERSION,
     modifiedAt: 0,
-    profile: { name: '', monsterNames: {} },
-    settings: { weeklyGoal: 3, defaultRest: 120, autoApply: true, sound: true, restSound: 'bell', soundVolume: 80, keepAwake: true, askRir: true },
+    profile: { name: '', monsterNames: {}, body: null },
+    settings: { weeklyGoal: 3, defaultRest: 120, autoApply: true, sound: true, restSound: 'bell', soundVolume: 80, keepAwake: true, askRir: true,
+      nutrition: { goal: 'bulk', proteinPerKg: 2, tdee: null, kcalOverride: null, adjustedAt: null, history: [] } },
     customExercises: [],
     exerciseOverrides: {},
     exerciseNotes: {},
@@ -53,6 +54,8 @@ function defaults() {
     workouts: [],
     bodyweight: [],
     measurements: [],
+    foods: [],
+    foodLog: [],
     active: null,
   };
 }

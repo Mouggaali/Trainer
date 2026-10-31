@@ -59,3 +59,11 @@ Zie `supabase/schema.sql` voor de tabellen die bij cloud-sync worden gebruikt.
 - `templates[].exercises[].repRange` en `workouts[].exercises[].repRange`: `{ "min": 8, "max": 12 }` → double progression.
 - `workouts[].exercises[].sets[].rir`: 0–3 (3 = "3+"), reps in reserve.
 - `settings.askRir` (bool), `settings.restSound`, `settings.soundVolume`.
+
+## Voeding (optionele velden via `defaults()`, geen migratie nodig)
+- `foods`: `[{ id, name, brand?, barcode?, per100: { kcal, protein, carbs, fat }, serving?: { label, g }, source: 'off'|'custom', usedAt, lastGrams }]`
+  — onthouden producten (Recent / Mijn producten), ook offline.
+- `foodLog`: `[{ id, date: 'YYYY-MM-DD', meal: 'ontbijt'|'lunch'|'diner'|'snack', foodId, name, grams, kcal, protein, carbs, fat }]`
+  — voedingswaarden als momentopname.
+- `profile.body`: `{ sex: 'm'|'f', birthYear, heightCm, activity: 'low'|'mid'|'high' }` (of `null`).
+- `settings.nutrition`: `{ goal: 'bulk'|'maintain'|'cut', proteinPerKg, tdee, kcalOverride, adjustedAt, history: [{ at, tdee, kcal }] }`.

@@ -68,3 +68,15 @@ Belangrijkste volumemaat voor hypertrofie: harde werksets per spiergroep per wee
 - Team-tab (onder "Trainingen per week"): kaart "Sets per spiergroep" (deze/vorige week) met max. 2 tips: laagste spiergroep onder het minimum
   (+ je meest gedane oefening daarvoor) en een spiergroep boven het maximum (meer levert weinig op, herstel gaat voor).
 - Monster-detail toont dezelfde telling. Los daarvan blijft de set-EXP-cap (20 primaire sets/week) in `xp.js`.
+
+## Voeding (`js/nutrition.js`, scherm: Lichaam → Voeding)
+- **Start-verbruik**: Mifflin-St Jeor (10·kg + 6,25·cm − 5·leeftijd + 5 man / −161 vrouw) × activiteit
+  (1,4 zittend · 1,55 licht actief · 1,7 actief). Gewicht = laatste weging.
+- **Doel**: aankomen +0,35% lichaamsgewicht/week (lean bulk, ~+300 kcal), gewicht houden, of afvallen −0,5%/week.
+  kcal = verbruik + tempo × gewicht × 7700 / 7. Optioneel vast caloriedoel (zet het slimme doel uit).
+- **Macro's**: eiwit 2,0 g/kg (instelbaar 1,6–2,2; onderzoek: boven ~1,6 g/kg weinig extra spiergroei, 2,0 geeft marge),
+  vet ≥ 0,8 g/kg en ≥ 20% kcal, koolhydraten = rest (brandstof voor trainingsvolume).
+- **Slim doel (wekelijks)**: als het laatste aanpassen ≥ 7 dagen geleden is en er in de laatste 21 dagen ≥ 10 gelogde
+  dagen (≥ 800 kcal, vandaag telt niet mee) en ≥ 3 wegingen zijn: trend = lineaire regressie door de wegingen;
+  verbruik-schatting = gem. inname − trend(kg/dag) × 7700; nieuw verbruik = 0,7 × oud + 0,3 × schatting,
+  max ±150 kcal per week. Komt sneller aan dan gewenst → doel omlaag, langzamer → omhoog.

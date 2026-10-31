@@ -46,3 +46,9 @@ samenvatting en optie om het template bij te werken. Een lopende training overle
 
 ## Status
 - v0.1 (24 okt 2026): alle bovenstaande features werken lokaal (localStorage). Nog geen cloud-sync.
+
+## Voeding (tab Lichaam → Voeding)
+Eten loggen per dag in Ontbijt/Lunch/Diner/Snacks: barcode scannen (camera) of intypen, zoeken in Open Food Facts,
+Recent/Mijn producten, zelf een product toevoegen. Dagtotaal vs. doel (kcal, eiwit, koolhydraten, vet) met trainerstip,
+kopieer een maaltijd van gisteren. Doel instellen (lichaamsgegevens + aankomen/houden/afvallen) en een wekelijks slim
+caloriedoel op basis van inname en gewichtstrend. Foto-herkenning met AI is bewust (nog) niet gebouwd.

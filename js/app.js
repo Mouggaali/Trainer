@@ -7,7 +7,8 @@ import { cancelRestPush } from './push.js';
 import { renderHistory, renderWorkoutDetail } from './views/history.js';
 import { renderProfile, renderSettings, mountSettings } from './views/profile.js';
 import { renderExercises, mountExercises, renderExerciseDetail } from './views/exercises.js';
-import { renderBody, renderMeasureForm } from './views/body.js';
+import { renderBodyTab, mountBodyTab, renderMeasureForm } from './views/body.js';
+import { renderFoodAdd, mountFoodAdd } from './views/food.js';
 import { renderMonsterDetail } from './views/team.js';
 import { renderWorkoutEdit } from './views/workout-edit.js';
 import { initSync, onSyncChange, statusText, gateState } from './sync.js';
@@ -24,7 +25,8 @@ const routes = {
   exercises: { render: (id) => renderExercises(id), mount: mountExercises, tab: 'exercises' },
   exercise: { render: renderExerciseDetail, tab: 'exercises' },
   monster: { render: renderMonsterDetail, tab: 'profile' },
-  body: { render: renderBody, tab: 'body' },
+  body: { render: renderBodyTab, mount: mountBodyTab, tab: 'body' },
+  'food-add': { render: renderFoodAdd, mount: mountFoodAdd, tab: 'body' },
   measure: { render: renderMeasureForm, tab: 'body' },
 };
 

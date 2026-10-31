@@ -58,13 +58,15 @@ js/config.js          GEGENEREERD, gitignored (Supabase URL + publishable key)
 js/progression.js     gewichtsadvies-algoritme + e1RM
 js/stats.js           weekstatistieken, volume, streaks, records
 js/volume.js          sets per spiergroep per week vs groeizone (10–20) + trainerstips
+js/nutrition.js       voedingsdoelen (Mifflin-St Jeor, macro's) + wekelijks slim caloriedoel
+js/food-api.js        Open Food Facts (barcode/zoeken) + camerascanner (barcode-detector polyfill, lazy)
 js/charts.js          barChart / lineChart (SVG)
 js/ui.js              helpers: escape, formatters, iconen, sheets (bottom sheets), toast, actions-registry
 js/exercise-library.js standaard oefeningen (naam, equipment, spiergroep, lower-body flag)
 js/game/xp.js         monster-XP (afgeleid uit historie), levels, evoluties
 js/game/monsters.js   18 originele pixel-monsters (24×24 grids → SVG)
 js/game/badges.js     8 badges (afgeleid uit historie) + pixel-medailles
-js/views/*.js         schermen: home(templates), active (training), history, workout-edit, profile (+team), team, body, exercises
+js/views/*.js         schermen: home(templates), active (training), history, workout-edit, profile (+team), team, body (+food), exercises
 server.js             statische dev-server zonder dependencies
 sw.js                 service worker
 ```

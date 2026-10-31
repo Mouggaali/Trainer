@@ -1,6 +1,28 @@
 import { getState, update, uid } from '../store.js';
 import { esc, on, go, icon, fmtNum, fmtDate, todayISO, isoToTs, num, confirmDialog, toast } from '../ui.js';
 import { lineChart } from '../charts.js';
+import { renderFood, mountFood } from './food.js';
+
+const PART_KEY = 'trainer.bodyPart';
+function lastPart() { try { return localStorage.getItem(PART_KEY) || 'food'; } catch { return 'food'; } }
+function rememberPart(p) { try { localStorage.setItem(PART_KEY, p); } catch { /* private mode */ } }
+
+/** Lichaam tab: Voeding or Gewicht & maten (`#/body/food`, `#/body/weight`). */
+export function renderBodyTab(part) {
+  const p = part === 'weight' || part === 'food' ? part : lastPart();
+  rememberPart(p);
+  return `
+    <header class="page-head"><h1>Lichaam</h1></header>
+    <div class="segmented">
+      <button class="${p === 'food' ? 'on' : ''}" data-action="go" data-href="#/body/food">Voeding</button>
+      <button class="${p === 'weight' ? 'on' : ''}" data-action="go" data-href="#/body/weight">Gewicht &amp; maten</button>
+    </div>
+    ${p === 'food' ? renderFood() : renderBody()}`;
+}
+
+export function mountBodyTab(part) {
+  if ((part === 'weight' || part === 'food' ? part : lastPart()) === 'food') mountFood();
+}
 
 export const MEASURE_PARTS = [
   { key: 'biceps', label: 'Biceps (gespannen)', sides: true },
@@ -63,8 +85,6 @@ export function renderBody() {
     <p class="muted small">Laatste meting: ${fmtDate(isoToTs(lastM.date), { day: 'numeric', month: 'long', year: 'numeric' })}${prevM ? ` · verschil t.o.v. ${fmtDate(isoToTs(prevM.date), { day: 'numeric', month: 'short' })}` : ''}</p>` : '<p class="empty">Nog geen metingen.</p>';
 
   return `
-    <header class="page-head"><h1>Lichaam</h1></header>
-
     <section class="card">
       <div class="card-head"><div><h2>Lichaamsgewicht</h2>
         <div class="muted small">${latest ? `${fmtDate(isoToTs(latest.date), { day: 'numeric', month: 'short' })}` : 'Weeg jezelf ’s ochtends, nuchter'}</div></div>
@@ -154,11 +174,11 @@ on({
       else s.measurements.push({ id: uid(), date, values });
     });
     toast('Meting opgeslagen');
-    go('#/body');
+    go('#/body/weight');
   },
   'm-del': async (el) => {
     if (!(await confirmDialog('Meting verwijderen?', null, 'Verwijderen', true))) return;
     update((s) => { s.measurements = s.measurements.filter((x) => x.id !== el.dataset.id); });
-    go('#/body');
+    go('#/body/weight');
   },
 });

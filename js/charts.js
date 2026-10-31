@@ -21,7 +21,7 @@ const shortDate = (ts) => {
 };
 
 export function barChart({ labels, values, goal = 0, height = 180, highlight = -1 }) {
-  const padL = 6, padR = 28, padT = 16, padB = 24;
+  const padL = 6, padR = Math.max(28, 12 + String(goal || 0).length * 9), padT = 16, padB = 24;
   const iw = W - padL - padR, ih = height - padT - padB;
   const max = Math.max(goal, ...values, 1);
   const y = (v) => padT + ih - (v / max) * ih;

@@ -17,3 +17,8 @@
 7. ~~Afgeronde trainingen achteraf bewerken~~ — gebouwd (`#/workout-edit/:id`).
 8. ~~Push-notificatie bij einde rust~~ — gebouwd.
 9. Plate calculator (welke schijven op de stang).
+
+## Voeding — vervolg
+- Foto van je maaltijd met AI (Claude via Supabase Edge Function, API-sleutel als Supabase-secret; ~1–3 cent/foto).
+- Opgeslagen maaltijden/recepten (meerdere producten in één keer).
+- Als `foodLog` groot wordt: naar een eigen Supabase-tabel i.p.v. de ene `app_state`-rij.
