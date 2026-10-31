@@ -144,11 +144,15 @@ function tick() {
   if (left <= 0) {
     update((s) => { s.active.rest = null; }, { silent: true });
     renderRestBar();
-    if (getState().settings.sound) {
-      playRestSound();
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    // iOS freezes the app while the screen is locked: a rest that ended long ago was already announced by the
+    // push notification, so no late bell when the app is reopened.
+    if (left > -3 && !document.hidden) {
+      if (getState().settings.sound) {
+        playRestSound();
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      }
+      toast('Rust voorbij — volgende set! 💪');
     }
-    toast('Rust voorbij — volgende set! 💪');
     return;
   }
   const t = document.querySelector('[data-rest-left]');

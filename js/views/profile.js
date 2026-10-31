@@ -102,7 +102,7 @@ export function renderSettings() {
       <label>Volume <span class="muted" id="vol-val">${st.soundVolume}%</span>
         <input type="range" id="set-volume" min="10" max="100" step="5" value="${st.soundVolume}" data-input="set-volume" data-live></label>
       <button class="btn btn-soft btn-block" type="button" data-action="sound-test">Test geluid</button>
-      <p class="muted small">Het geluid speelt ook als je telefoon op stil staat en komt door je oortjes. Het volume hangt ook af van je telefoonvolume. Een geluid dat afspeelt kan je muziek even pauzeren.</p>
+      <p class="muted small">Het geluid klinkt over je muziek heen (die gaat even zachter) en komt door je oortjes. Het volume hangt ook af van je telefoonvolume. Op het vergrendelscherm klinkt het meldingsgeluid van je iPhone: zet Instellingen → Meldingen → Trainer → Geluiden aan en je telefoon niet op stil (of sta Trainer toe in je Focus). Met AirPods kan "Meldingen aankondigen" hem voorlezen.</p>
       <label class="check-row"><input type="checkbox" data-input="set-rir" ${st.askRir !== false ? 'checked' : ''}> Na elke set vragen hoeveel reps je nog over had (RIR)</label>
       <label class="check-row"><input type="checkbox" data-input="set-awake" ${st.keepAwake !== false ? 'checked' : ''}> Scherm aan houden tijdens een training</label>
     </section>

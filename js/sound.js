@@ -1,8 +1,10 @@
 // Sound for the end of a rest. The sounds are synthesised here (no audio files), written to a WAV blob
-// and played through an <audio> element with the iOS Audio Session set to "playback":
-//  - plays even when the phone's silent switch is on, and goes through earbuds;
+// and played through an <audio> element with the iOS Audio Session set to "transient":
+//  - mixes with the user's music (it is ducked, not paused) and goes through earbuds;
+//    "playback" would also sound on the silent switch, but pauses Spotify & co.;
 //  - the volume is baked into the samples, because iOS ignores HTMLMediaElement.volume
 //    (the final loudness is still scaled by the phone's own volume buttons).
+// With the screen locked iOS freezes the app, so there the push notification (system sound) is the alert.
 // Game blips (XP, level-up) stay in js/ui.js (Web Audio, they respect the silent switch).
 import { getState } from './store.js';
 
@@ -139,7 +141,7 @@ export function playRestSound({ id, volume } = {}) {
   const vol = (volume ?? s.soundVolume ?? 80) / 100;
   try {
     const a = audioEl();
-    setSession('playback');
+    setSession('transient');
     a.src = soundUrl(sound, vol);
     a.currentTime = 0;
     const p = a.play();
