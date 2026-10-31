@@ -97,6 +97,8 @@ html { height: 100%; overflow: hidden; }
    The min() cap keeps it from scrolling when the status-bar inset is 0. */
 @media (display-mode: standalone) {
   html { height: auto; min-height: min(100lvh, calc(100% + env(safe-area-inset-top))); }
+  /* Room for the home indicator under the tabbar (iOS 26 may report a 0 inset here). */
+  :root { --safe-b: max(env(safe-area-inset-bottom, 0px), 26px); }
 }
 body {
   /* Pinned to all four edges of the viewport (no 100dvh: unreliable in the iOS home-screen app). */

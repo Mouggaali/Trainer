@@ -193,7 +193,9 @@ function checkShortViewport() {
   document.documentElement.classList.toggle('ios-short', short);
 }
 checkShortViewport();
+setTimeout(checkShortViewport, 600); // iOS may grow the window just after launch without a resize event
 addEventListener('resize', checkShortViewport);
+document.addEventListener('visibilitychange', checkShortViewport);
 
 setRerender(render);
 subscribe(render);
