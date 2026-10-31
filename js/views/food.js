@@ -19,6 +19,8 @@ const day = () => foodDate || todayISO();
 const shiftISO = (iso, d) => localISO(isoToTs(iso) + d * DAY);
 const mealLabel = (id) => MEALS.find((m) => m.id === id)?.label || id;
 const g1 = (n) => fmtNum(n, 0);
+/** 'g' or 'ml' (drinks). Nutrition values are always per 100 of that unit. */
+const unitOf = (x) => (x?.unit === 'ml' ? 'ml' : 'g');
 
 function dayLabel(iso) {
   const today = todayISO();
@@ -83,7 +85,7 @@ export function renderFood() {
       ${list.length ? `<div class="list list-flat">${list.map((e) => `
         <button class="list-item food-row" data-action="food-entry" data-id="${e.id}">
           <div class="li-main"><div class="li-title">${esc(e.name)}</div>
-          <div class="li-sub">${g1(e.grams)} g · ${fmtNum(e.protein, 1)} g eiwit</div></div>
+          <div class="li-sub">${g1(e.grams)} ${unitOf(e)} · ${fmtNum(e.protein, 1)} g eiwit</div></div>
           <span class="food-kcal">${g1(e.kcal)}<small> kcal</small></span></button>`).join('')}</div>` : ''}
       ${canCopy ? `<button class="link-btn" data-action="food-copy" data-meal="${m.id}">${icon('copy')} Kopieer van ${d === todayISO() ? 'gisteren' : 'vorige dag'}</button>` : ''}
     </section>`;
@@ -154,7 +156,7 @@ export function renderFoodAdd(meal = 'snack') {
     .slice(0, q ? 30 : 15);
   const item = (f, src, i) => `<button class="list-item" data-action="food-pick" data-src="${src}" data-i="${i}" data-meal="${esc(meal)}">
     <div class="li-main"><div class="li-title">${esc(f.name)}</div>
-    <div class="li-sub">${f.brand ? `${esc(f.brand)} · ` : ''}${f.per100.kcal} kcal · ${fmtNum(f.per100.protein, 1)} g eiwit /100 g</div></div>${icon('plus', 'muted')}</button>`;
+    <div class="li-sub">${f.brand ? `${esc(f.brand)} · ` : ''}${f.per100.kcal} kcal · ${fmtNum(f.per100.protein, 1)} g eiwit /100 ${unitOf(f)}</div></div>${icon('plus', 'muted')}</button>`;
 
   return `
     <header class="page-head sticky-head">
@@ -207,6 +209,7 @@ function rememberFood(food, grams) {
     if (!f) { f = { ...food, id: uid() }; s.foods.push(f); }
     f.usedAt = Date.now();
     f.lastGrams = grams;
+    f.unit = unitOf(food);
     id = f.id;
   }, { silent: true });
   return id;
@@ -214,13 +217,15 @@ function rememberFood(food, grams) {
 
 async function amountSheet(food, { grams, title = 'Toevoegen', del = false } = {}) {
   const start = grams || food.lastGrams || food.serving?.g || 100;
+  let unit = unitOf(food);
   const quick = [...new Set([food.serving?.g, 100, food.lastGrams].filter((g) => g > 0))];
   const { el, result } = sheetPromise(`
     <h3 class="sheet-title">${esc(food.name)}</h3>
-    <p class="sheet-text">${food.brand ? `${esc(food.brand)} · ` : ''}per 100 g: ${food.per100.kcal} kcal · E ${fmtNum(food.per100.protein, 1)} · K ${fmtNum(food.per100.carbs, 1)} · V ${fmtNum(food.per100.fat, 1)}</p>
+    <p class="sheet-text">${food.brand ? `${esc(food.brand)} · ` : ''}per 100 <span data-unit>${unit}</span>: ${food.per100.kcal} kcal · E ${fmtNum(food.per100.protein, 1)} · K ${fmtNum(food.per100.carbs, 1)} · V ${fmtNum(food.per100.fat, 1)}</p>
     <form class="form" onsubmit="return false">
-      <label>Hoeveelheid (gram)<input id="amt-g" inputmode="decimal" value="${fmtNum(start, 1)}"></label>
-      <div class="chip-row">${quick.map((g) => `<button type="button" class="chip-btn" data-g="${g}">${g === food.serving?.g ? `1 portie (${fmtNum(g, 0)} g)` : `${fmtNum(g, 0)} g`}</button>`).join('')}</div>
+      <div class="amt-row"><label>Hoeveelheid<input id="amt-g" inputmode="decimal" value="${fmtNum(start, 1)}"></label>
+        <div class="unit-toggle" role="group" aria-label="Eenheid">${['g', 'ml'].map((u) => `<button type="button" class="${u === unit ? 'on' : ''}" data-unit-set="${u}">${u}</button>`).join('')}</div></div>
+      <div class="chip-row">${quick.map((g) => `<button type="button" class="chip-btn" data-g="${g}">${g === food.serving?.g ? `1 portie (${fmtNum(g, 0)} <span data-unit>${unit}</span>)` : `${fmtNum(g, 0)} <span data-unit>${unit}</span>`}</button>`).join('')}</div>
       <div class="amt-preview" id="amt-prev"></div>
       <div class="sheet-actions">
         <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="ok">${esc(title)}</button>
@@ -236,22 +241,28 @@ async function amountSheet(food, { grams, title = 'Toevoegen', del = false } = {
     prev.innerHTML = `<b>${n.kcal} kcal</b> · ${fmtNum(n.protein, 1)} g eiwit · ${fmtNum(n.carbs, 1)} g koolh. · ${fmtNum(n.fat, 1)} g vet`;
   };
   input.addEventListener('input', () => { value = num(input.value) || 0; show(); });
+  el.querySelectorAll('[data-unit-set]').forEach((b) => b.addEventListener('click', () => {
+    unit = b.dataset.unitSet;
+    el.querySelectorAll('[data-unit-set]').forEach((x) => x.classList.toggle('on', x === b));
+    el.querySelectorAll('[data-unit]').forEach((x) => { x.textContent = unit; });
+  }));
   el.querySelectorAll('[data-g]').forEach((b) => b.addEventListener('click', () => { value = Number(b.dataset.g); input.value = fmtNum(value, 1); show(); }));
   show();
   const r = await result;
   if (r === 'del') return { del: true };
   if (r !== 'ok') return null;
   if (!(value > 0) || value > 5000) { toast('Vul een geldige hoeveelheid in'); return null; }
-  return { grams: value };
+  return { grams: value, unit };
 }
 
 async function addFood(food, meal) {
   const r = await amountSheet(food);
   if (!r?.grams) return;
+  food = { ...food, unit: r.unit };
   const foodId = rememberFood(food, r.grams);
   update((s) => {
     s.foodLog = s.foodLog || [];
-    s.foodLog.push({ id: uid(), date: day(), meal, foodId, name: food.name, grams: r.grams, ...nutrientsFor(food.per100, r.grams) });
+    s.foodLog.push({ id: uid(), date: day(), meal, foodId, name: food.name, grams: r.grams, unit: r.unit, ...nutrientsFor(food.per100, r.grams) });
   }, { silent: true });
   toast(`${food.name} toegevoegd`);
   query = '';
@@ -262,7 +273,7 @@ async function addFood(food, meal) {
 async function productForm(meal, preset = {}) {
   const { el, result } = sheetPromise(`
     <h3 class="sheet-title">Nieuw product</h3>
-    <p class="sheet-text">Neem de waarden per 100 g over van het etiket.</p>
+    <p class="sheet-text">Neem de waarden per 100 g (of 100 ml bij drinken) over van het etiket.</p>
     <form class="form" id="np-form" onsubmit="return false">
       <label>Naam<input name="name" value="${esc(preset.name || '')}" maxlength="80" placeholder="Magere kwark"></label>
       <label>Merk (optioneel)<input name="brand" value="${esc(preset.brand || '')}" maxlength="40"></label>
@@ -272,7 +283,8 @@ async function productForm(meal, preset = {}) {
         <label>Koolh. g<input name="carbs" inputmode="decimal"></label>
         <label>Vet g<input name="fat" inputmode="decimal"></label>
       </div>
-      <label>Portie in gram (optioneel)<input name="serving" inputmode="decimal" placeholder="bv. 150"></label>
+      <label>Eenheid<select name="unit"><option value="g">gram (eten)</option><option value="ml">ml (drinken)</option></select></label>
+      <label>Portie (optioneel)<input name="serving" inputmode="decimal" placeholder="bv. 150"></label>
       ${preset.barcode ? `<p class="muted small">Barcode ${esc(preset.barcode)}</p>` : ''}
       <div class="sheet-actions">
         <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="ok">Opslaan</button>
@@ -291,7 +303,8 @@ async function productForm(meal, preset = {}) {
   const food = {
     name, brand: String(f.get('brand') || '').trim() || undefined, barcode: preset.barcode,
     per100: { kcal: Math.round(kcal), protein: num(f.get('protein')) || 0, carbs: num(f.get('carbs')) || 0, fat: num(f.get('fat')) || 0 },
-    serving: serving > 0 ? { label: `${serving} g`, g: serving } : undefined,
+    serving: serving > 0 ? { label: `${serving} ${f.get('unit') === 'ml' ? 'ml' : 'g'}`, g: serving } : undefined,
+    unit: f.get('unit') === 'ml' ? 'ml' : 'g',
     source: 'custom',
   };
   await addFood(food, meal);
@@ -417,7 +430,7 @@ on({
     if (!e) return;
     const f = (s.foods || []).find((x) => x.id === e.foodId);
     const per100 = f?.per100 || { kcal: (e.kcal / e.grams) * 100, protein: (e.protein / e.grams) * 100, carbs: (e.carbs / e.grams) * 100, fat: (e.fat / e.grams) * 100 };
-    const r = await amountSheet({ ...(f || {}), name: e.name, per100 }, { grams: e.grams, title: 'Opslaan', del: true });
+    const r = await amountSheet({ ...(f || {}), name: e.name, per100, unit: unitOf(e) }, { grams: e.grams, title: 'Opslaan', del: true });
     if (!r) return;
     if (r.del) {
       if (!(await confirmDialog(`${e.name} verwijderen?`, null, 'Verwijderen', true))) return;
@@ -426,7 +439,9 @@ on({
     }
     update((st) => {
       const x = st.foodLog.find((y) => y.id === e.id);
-      if (x) Object.assign(x, { grams: r.grams }, nutrientsFor(per100, r.grams));
+      if (x) Object.assign(x, { grams: r.grams, unit: r.unit }, nutrientsFor(per100, r.grams));
+      const pf = x && st.foods.find((y) => y.id === x.foodId);
+      if (pf) pf.unit = r.unit;
     });
   },
   'food-copy': (el) => {

@@ -61,9 +61,10 @@ Zie `supabase/schema.sql` voor de tabellen die bij cloud-sync worden gebruikt.
 - `settings.askRir` (bool), `settings.restSound`, `settings.soundVolume`.
 
 ## Voeding (optionele velden via `defaults()`, geen migratie nodig)
-- `foods`: `[{ id, name, brand?, barcode?, per100: { kcal, protein, carbs, fat }, serving?: { label, g }, source: 'off'|'custom', usedAt, lastGrams }]`
+- `foods`: `[{ id, name, brand?, barcode?, per100: { kcal, protein, carbs, fat }, serving?: { label, g }, unit?: 'g'|'ml', source: 'off'|'custom', usedAt, lastGrams }]`
+  — `unit: 'ml'` = drinken: waarden per 100 ml, `grams`/`serving.g` zijn dan ml (Open Food Facts: `product_quantity_unit`).
   — onthouden producten (Recent / Mijn producten), ook offline.
-- `foodLog`: `[{ id, date: 'YYYY-MM-DD', meal: 'ontbijt'|'lunch'|'diner'|'snack', foodId, name, grams, kcal, protein, carbs, fat }]`
+- `foodLog`: `[{ id, date: 'YYYY-MM-DD', meal: 'ontbijt'|'lunch'|'diner'|'snack', foodId, name, grams, unit?, kcal, protein, carbs, fat }]`
   — voedingswaarden als momentopname.
 - `profile.body`: `{ sex: 'm'|'f', birthYear, heightCm, activity: 'low'|'mid'|'high' }` (of `null`).
 - `settings.nutrition`: `{ goal: 'bulk'|'maintain'|'cut', proteinPerKg, tdee, kcalOverride, adjustedAt, history: [{ at, tdee, kcal }] }`.

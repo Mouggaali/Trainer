@@ -1,7 +1,7 @@
 // Product data from Open Food Facts (free, no key) + camera barcode scanner.
 // iOS Safari has no native BarcodeDetector, so a zxing-wasm polyfill is loaded the first time the scanner opens.
 
-const FIELDS = 'code,product_name,product_name_nl,brands,nutriments,serving_quantity,serving_size';
+const FIELDS = 'code,product_name,product_name_nl,brands,nutriments,serving_quantity,serving_size,quantity,product_quantity_unit,serving_quantity_unit';
 const SCANNER_LIB = 'https://cdn.jsdelivr.net/npm/barcode-detector@3.2.2/+esm';
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
 
@@ -15,12 +15,16 @@ export function fromOff(p) {
   const name = (p.product_name_nl || p.product_name || '').trim();
   if (kcal == null || !name) return null;
   const servingG = Number(p.serving_quantity);
+  // Drinks: Open Food Facts stores their values per 100 ml (still under the *_100g keys).
+  const liquid = [p.product_quantity_unit, p.serving_quantity_unit].some((u) => /^(ml|cl|l)$/i.test(u || ''))
+    || /\d\s*(ml|cl|l|liter)/i.test(p.quantity || '');
   return {
     name,
     brand: (p.brands || '').split(',')[0].trim() || undefined,
     barcode: p.code || undefined,
     per100: { kcal: Math.round(kcal), protein: r1(n.proteins_100g), carbs: r1(n.carbohydrates_100g), fat: r1(n.fat_100g) },
     serving: servingG > 0 && servingG < 2000 ? { label: p.serving_size || `${servingG} g`, g: servingG } : undefined,
+    unit: liquid ? 'ml' : 'g',
     source: 'off',
   };
 }
