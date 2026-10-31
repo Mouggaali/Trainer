@@ -57,6 +57,7 @@ js/push.js            Web Push: abonnement + rest_timers plannen/verplaatsen/ann
 js/config.js          GEGENEREERD, gitignored (Supabase URL + publishable key)
 js/progression.js     gewichtsadvies-algoritme + e1RM
 js/stats.js           weekstatistieken, volume, streaks, records
+js/volume.js          sets per spiergroep per week vs groeizone (10–20) + trainerstips
 js/charts.js          barChart / lineChart (SVG)
 js/ui.js              helpers: escape, formatters, iconen, sheets (bottom sheets), toast, actions-registry
 js/exercise-library.js standaard oefeningen (naam, equipment, spiergroep, lower-body flag)

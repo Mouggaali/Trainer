@@ -59,3 +59,12 @@ Na het afvinken van een werkset vraagt de app "Reps over? 0 · 1 · 2 · 3+" (op
 - Dubbele stappen nooit groter dan 15% van het gewicht (`bigStep`), zodat lichte kabel/dumbbell-gewichten
   niet met 30–40% omhoog springen.
 - Geen RIR ingevuld → regels zoals hierboven zonder RIR.
+
+## Weekvolume per spiergroep (`js/volume.js`)
+Belangrijkste volumemaat voor hypertrofie: harde werksets per spiergroep per week (maandag–zondag).
+- Telling: afgevinkte werkset (geen warming-up) = 1 set voor de primaire spiergroep, 0,5 voor de hulpspiergroep
+  (`secondary`; die doet mee, maar minder). 'Overig' telt niet. De lopende training telt al mee.
+- Doelen (groeizone): Borst, Rug, Schouders, Armen, Benen 10–20; Core 6–12.
+- Team-tab: kaart "Sets per spiergroep" (deze/vorige week) met max. 2 tips: laagste spiergroep onder het minimum
+  (+ je meest gedane oefening daarvoor) en een spiergroep boven het maximum (meer levert weinig op, herstel gaat voor).
+- Monster-detail toont dezelfde telling. Los daarvan blijft de set-EXP-cap (20 primaire sets/week) in `xp.js`.

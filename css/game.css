@@ -143,3 +143,17 @@ textarea { width: 100%; background: var(--paper-2); border: 0; box-shadow: var(-
 .badge-sheet { display: grid; justify-items: center; text-align: center; gap: 6px; }
 .badge-sheet .exp-bar { width: 100%; }
 .badge-gain { justify-items: center; }
+
+/* ---------- Sets per muscle group (Team tab) ---------- */
+.vol-list { display: grid; gap: 8px; margin-bottom: 12px; }
+.vol-row { display: grid; grid-template-columns: 28px 74px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.vol-sprite .monster, .vol-sprite svg { width: 28px; height: 28px; display: block; }
+.vol-name { font: 8px/1.4 var(--font-pixel); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vol-bar { position: relative; height: 12px; background: var(--paper-2); box-shadow: 0 0 0 2px var(--ink); overflow: hidden; }
+.vol-zone { position: absolute; top: 0; bottom: 0; background: rgba(88, 208, 104, .28); border-left: 2px dashed var(--hp-green-dark); border-right: 2px dashed var(--hp-green-dark); }
+.vol-bar > i { position: relative; display: block; height: 100%; background: var(--hp-green); box-shadow: inset 0 -3px 0 var(--hp-green-dark); transition: width .5s steps(10); }
+.vol-row.is-low .vol-bar > i { background: #f89038; box-shadow: inset 0 -3px 0 #b05010; }
+.vol-row.is-high .vol-bar > i { background: var(--exp); box-shadow: inset 0 -3px 0 var(--exp-dark); }
+.vol-num { font-size: 22px; min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.vol-num small { color: var(--muted); font-size: 16px; }
+.vol-tip { min-height: 0; margin-bottom: 4px; font-size: 20px; }

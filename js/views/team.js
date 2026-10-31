@@ -4,6 +4,7 @@ import { computeTeam, WEEK_SET_CAP, EVOLVE_AT, XP } from '../game/xp.js';
 import { MONSTERS, monsterSprite, monsterName } from '../game/monsters.js';
 import { trainedExercises } from '../stats.js';
 import { computeBadges, badgeSvg } from '../game/badges.js';
+import { volumeReport } from '../volume.js';
 
 const nick = () => getState().profile.monsterNames || {};
 export const pct = (into, needed) => (needed ? Math.max(0, Math.min(100, (into / needed) * 100)) : 100);
@@ -69,8 +70,13 @@ export function renderMonsterDetail(muscle) {
     .filter((e) => e.muscle === muscle || e.secondary === muscle)
     .sort((a, b) => (counts.get(b.id) || 0) - (counts.get(a.id) || 0))
     .slice(0, 8);
-  const meter = Math.min(100, (t.setsThisWeek / WEEK_SET_CAP) * 100);
-  const meterCls = t.setsThisWeek >= 10 ? '' : 'is-mid';
+  const vol = volumeReport().rows.find((r) => r.muscle === muscle);
+  const sets = String(Math.round(vol.sets * 2) / 2).replace('.', ',');
+  const meter = Math.min(100, (vol.sets / vol.max) * 100);
+  const meterCls = vol.status === 'low' ? 'is-mid' : '';
+  const volText = vol.status === 'high' ? `Boven ${vol.max} sets: meer levert weinig extra op. Rust is ook groei!`
+    : vol.status === 'ok' ? 'Goed bezig, je zit in de groeizone.'
+    : `Nog ${String(Math.round((vol.min - vol.sets) * 2) / 2).replace('.', ',')} sets tot de groeizone.`;
   const nextEvo = EVOLVE_AT.find((l) => l > t.level);
 
   return `
@@ -90,9 +96,9 @@ export function renderMonsterDetail(muscle) {
     </section>
 
     <section class="card">
-      <div class="card-head"><div><h2>Sets deze week</h2><div class="muted small">10–20 harde sets per week is ideaal voor spiergroei</div></div><b>${t.setsThisWeek}/${WEEK_SET_CAP}</b></div>
+      <div class="card-head"><div><h2>Sets deze week</h2><div class="muted small">${vol.min}–${vol.max} harde sets per week is ideaal voor spiergroei (hulpspier telt half)</div></div><b>${sets}/${vol.min}–${vol.max}</b></div>
       <div class="hp-bar sets-bar ${meterCls}"><i style="width:${meter}%"></i></div>
-      <p class="muted small">${t.setsThisWeek >= WEEK_SET_CAP ? 'Maximum bereikt: extra sets geven deze week geen set-EXP. meer. Rust is ook groei!' : t.setsThisWeek >= 10 ? 'Goed bezig, je zit in de groeizone.' : `Nog ${10 - t.setsThisWeek} sets tot de groeizone.`}</p>
+      <p class="muted small">${volText}${t.setsThisWeek >= WEEK_SET_CAP ? ` Na ${WEEK_SET_CAP} sets geven extra sets deze week geen set-EXP. meer.` : ''}</p>
     </section>
 
     <section class="card">

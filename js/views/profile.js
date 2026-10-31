@@ -8,9 +8,13 @@ import { renderTrainerCard, renderTeamParty, badgeCase } from './team.js';
 import { pushStatus, enablePush, disablePush } from '../push.js';
 import { SOUNDS, previewSound } from '../sound.js';
 import { syncInfo, statusText, setNewPassword, syncNow, logout } from '../sync.js';
+import { volumeReport } from '../volume.js';
+import { computeTeam } from '../game/xp.js';
+import { monsterSprite } from '../game/monsters.js';
 
 let selEx = null;
 let metric = 'e1rm';
+let volWeek = 0; // 0 = this week, 1 = last week
 
 const METRICS = {
   e1rm: { label: 'e1RM', fn: (sets) => bestE1rm(sets) },
@@ -66,6 +70,8 @@ export function renderProfile() {
         <div class="stat-sub">${lastWeek.volume ? `vorige: ${fmtVolume(lastWeek.volume)}` : ''}</div></div>
     </section>
 
+    ${volumeCard()}
+
     <section class="card">
       <div class="card-head"><div><h2>Trainingen per week</h2><div class="muted small">Doel: ${goal} per week</div></div></div>
       ${barChart({ labels: weeks.map((w) => { const d = new Date(w.start); return `${d.getDate()}/${d.getMonth() + 1}`; }), values: weeks.map((w) => w.count), goal, highlight: weeks.length - 1 })}
@@ -79,6 +85,30 @@ export function renderProfile() {
     ${records ? `<section class="card"><div class="card-head"><h2>${icon('trophy')} Records (e1RM)</h2></div><div class="list list-flat">${records}</div></section>` : ''}
 
     ${badgeCase()}`;
+}
+
+const fmtSets = (n) => String(Math.round(n * 2) / 2).replace('.', ',');
+
+/** Hard working sets per muscle group this week vs the 10–20 growth zone (js/volume.js). */
+function volumeCard() {
+  const { rows, tips } = volumeReport(volWeek);
+  const forms = new Map(computeTeam().team.map((t) => [t.muscle, t.form]));
+  const list = rows.map((r) => {
+    const scale = r.max * 1.25;
+    const p = (v) => Math.min(100, (v / scale) * 100);
+    return `<div class="vol-row is-${r.status}">
+      <span class="vol-sprite">${monsterSprite(r.muscle, forms.get(r.muscle) || 0, 28, 'sprite')}</span>
+      <span class="vol-name">${esc(r.muscle)}</span>
+      <div class="vol-bar"><span class="vol-zone" style="left:${p(r.min)}%;width:${p(r.max) - p(r.min)}%"></span><i style="width:${p(r.sets)}%"></i></div>
+      <span class="vol-num">${fmtSets(r.sets)}<small>/${r.min}–${r.max}</small></span>
+    </div>`;
+  }).join('');
+  return `<section class="card">
+    <div class="card-head"><div><h2>Sets per spiergroep</h2><div class="muted small">Harde werksets · hulpspier telt half</div></div></div>
+    <div class="segmented">${['Deze week', 'Vorige week'].map((l, i) => `<button class="${i === volWeek ? 'on' : ''}" data-action="vol-week" data-w="${i}">${l}</button>`).join('')}</div>
+    <div class="vol-list">${list}</div>
+    <div class="dialog-box vol-tip">${tips.map(esc).join('<br>')}</div>
+  </section>`;
 }
 
 export function renderSettings() {
@@ -192,6 +222,7 @@ on({
   },
   'prof-ex': (el) => { selEx = el.value; go(location.hash); },
   'prof-metric': (el) => { metric = el.dataset.m; go(location.hash); },
+  'vol-week': (el) => { volWeek = Number(el.dataset.w); go(location.hash); },
   'set-name': (el) => update((s) => { s.profile.name = el.value; }, { silent: true }),
   'set-goal': (el) => update((s) => { s.settings.weeklyGoal = Number(el.value); }),
   'set-rest': (el) => update((s) => { s.settings.defaultRest = Number(el.value); }),
