@@ -204,3 +204,23 @@ textarea { width: 100%; background: var(--paper-2); border: 0; box-shadow: var(-
 .unit-toggle { display: flex; gap: 4px; background: var(--paper-2); box-shadow: var(--pb-single); padding: 4px; margin-bottom: 12px; }
 .unit-toggle button { min-width: 48px; min-height: 40px; font: 9px/1 var(--font-pixel); color: var(--muted); }
 .unit-toggle button.on { background: var(--ink); color: #fff; }
+
+/* ---------- BMI (Lichaam → Gewicht & maten) ---------- */
+.bmi-scale { position: relative; height: 14px; margin: 6px 2px 0; box-shadow: 0 0 0 2px var(--ink); }
+.bmi-scale span { position: absolute; top: 0; bottom: 0; }
+.bmi-scale .is-low { background: var(--exp); }
+.bmi-scale .is-ok { background: var(--hp-green); }
+.bmi-scale .is-mid { background: var(--hp-yellow); }
+.bmi-scale .is-high { background: var(--hp-red); }
+.bmi-scale i { position: absolute; top: -6px; bottom: -6px; width: 4px; margin-left: -2px; background: var(--ink); }
+.bmi-labels { position: relative; height: 18px; font-size: 16px; color: var(--muted); }
+.bmi-labels span { position: absolute; transform: translateX(-50%); }
+.bmi-labels span:nth-child(1) { left: 17.5%; }
+.bmi-labels span:nth-child(2) { left: 50%; }
+.bmi-labels span:nth-child(3) { left: 75%; }
+.bmi-cat { margin: 4px 0 6px; font: 10px/1.6 var(--font-pixel); }
+.bmi-cat.is-low { color: var(--exp-dark); }
+.bmi-cat.is-ok { color: var(--hp-green-dark); }
+.bmi-cat.is-mid { color: var(--hp-yellow-dark); }
+.bmi-cat.is-high { color: var(--hp-red-dark); }
+.link-inline { min-height: 0; padding: 0; display: inline; font-size: 9px; }

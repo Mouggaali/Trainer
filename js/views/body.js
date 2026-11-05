@@ -1,5 +1,5 @@
 import { getState, update, uid } from '../store.js';
-import { esc, on, go, icon, fmtNum, fmtDate, todayISO, isoToTs, num, confirmDialog, toast } from '../ui.js';
+import { esc, on, go, icon, fmtNum, fmtDate, todayISO, isoToTs, num, confirmDialog, toast, sheetPromise } from '../ui.js';
 import { lineChart } from '../charts.js';
 import { renderFood, mountFood } from './food.js';
 
@@ -48,6 +48,50 @@ function deltaHtml(cur, prev, higherIsGood = true) {
   if (!d) return '<span class="dl muted">±0</span>';
   const good = higherIsGood ? d > 0 : d < 0;
   return `<span class="dl ${good ? 'text-green' : 'text-red'}">${d > 0 ? '+' : ''}${fmtNum(d, 1)}</span>`;
+}
+
+// BMI categories (WHO). For strength athletes BMI overestimates fat: muscle weighs too.
+const BMI_CATS = [
+  { max: 18.5, label: 'Ondergewicht', cls: 'is-low' },
+  { max: 25, label: 'Gezond gewicht', cls: 'is-ok' },
+  { max: 30, label: 'Overgewicht', cls: 'is-mid' },
+  { max: Infinity, label: 'Obesitas', cls: 'is-high' },
+];
+
+/** BMI card: latest weight / height², with the WHO band and the waist-to-height ratio when a waist is measured. */
+function bmiCard(latest, lastM) {
+  const h = getState().profile.body?.heightCm;
+  if (!h) {
+    return `<section class="card">
+      <div class="card-head"><div><h2>BMI</h2><div class="muted small">Vul je lengte in om je BMI te zien</div></div>
+        <button class="btn btn-soft btn-sm" data-action="bmi-height">${icon('edit')} Lengte</button></div>
+    </section>`;
+  }
+  if (!latest) return '';
+  const m = h / 100;
+  const bmi = latest.kg / (m * m);
+  const cat = BMI_CATS.find((c) => bmi < c.max);
+  // scale 15–35 → 0–100%
+  const pos = (v) => Math.max(0, Math.min(100, ((v - 15) / 20) * 100));
+  const waist = lastM?.values?.waist;
+  const whtr = waist ? waist / h : null;
+  return `<section class="card">
+    <div class="card-head"><div><h2>BMI</h2><div class="muted small">${fmtNum(latest.kg, 1)} kg · ${fmtNum(h, 0)} cm</div></div>
+      <div class="big-num">${fmtNum(bmi, 1)}</div></div>
+    <div class="bmi-scale">
+      <span style="left:0;width:${pos(18.5)}%" class="is-low"></span>
+      <span style="left:${pos(18.5)}%;width:${pos(25) - pos(18.5)}%" class="is-ok"></span>
+      <span style="left:${pos(25)}%;width:${pos(30) - pos(25)}%" class="is-mid"></span>
+      <span style="left:${pos(30)}%;width:${100 - pos(30)}%" class="is-high"></span>
+      <i style="left:${pos(bmi)}%"></i>
+    </div>
+    <div class="bmi-labels"><span>18,5</span><span>25</span><span>30</span></div>
+    <p class="bmi-cat ${cat.cls}">${cat.label}</p>
+    ${whtr ? `<p class="muted small">Taille/lengte: <b>${fmtNum(whtr, 2)}</b> ${whtr < 0.5 ? '(gezond, onder 0,5)' : '(boven 0,5: let op buikvet)'}</p>` : ''}
+    <p class="muted small">Let op: BMI ziet geen verschil tussen spieren en vet. Bij krachtsporters valt hij vaak hoger uit
+      dan hun vetpercentage doet vermoeden; je taille (in je metingen) zegt meer.
+      <button class="link-btn link-inline" data-action="bmi-height">Lengte wijzigen</button></p>
+  </section>`;
 }
 
 export function renderBody() {
@@ -100,6 +144,8 @@ export function renderBody() {
         <button class="icon-btn icon-btn-sm danger" data-action="bw-del" data-id="${x.id}" aria-label="Verwijderen">${icon('trash')}</button></div>`).join('')}</details>` : ''}
     </section>
 
+    ${bmiCard(latest, lastM)}
+
     <section class="card">
       <div class="card-head"><div><h2>Omtrekmaten</h2><div class="muted small">in cm, links en rechts apart</div></div>
         <button class="btn btn-primary btn-sm" data-action="go" data-href="#/measure/new">${icon('plus')} Meting</button></div>
@@ -146,6 +192,25 @@ export function renderMeasureForm(id) {
 }
 
 on({
+  'bmi-height': async () => {
+    const cur = getState().profile.body?.heightCm;
+    const { el, result } = sheetPromise(`
+      <h3 class="sheet-title">Lengte</h3>
+      <form class="form" onsubmit="return false">
+        <label>Lengte in cm<input id="h-cm" inputmode="numeric" value="${cur || ''}" placeholder="180"></label>
+        <div class="sheet-actions">
+          <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="ok">Opslaan</button>
+          <button class="btn btn-secondary btn-block" data-action="sheet-dismiss" type="button">Annuleren</button>
+        </div>
+      </form>`);
+    const input = el.querySelector('#h-cm');
+    let v = input.value;
+    input.addEventListener('input', () => { v = input.value; });
+    if ((await result) !== 'ok') return;
+    const h = num(v);
+    if (!(h > 120 && h < 230)) return toast('Vul een lengte tussen 120 en 230 cm in');
+    update((s) => { s.profile.body = { ...(s.profile.body || {}), heightCm: Math.round(h) }; });
+  },
   'bw-add': () => {
     const kg = num(document.getElementById('bw-kg').value);
     const date = document.getElementById('bw-date').value || todayISO();

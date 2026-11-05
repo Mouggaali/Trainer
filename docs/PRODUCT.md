@@ -55,3 +55,6 @@ caloriedoel op basis van inname en gewichtstrend. Foto-herkenning met AI is bewu
 
 Vaste maaltijden: een maaltijdblok met 2+ producten opslaan ("Opslaan als vaste maaltijd") en op de toevoegpagina met
 één tik helemaal toevoegen. Eiwitdoel gehaald = +10 EXP. voor het hele team, en een Eiwit-badge voor 7 dagen op rij.
+
+BMI-kaart (Lichaam → Gewicht & maten): laatste weging / lengte² (`profile.body.heightCm`, ook in te vullen via "Lengte"), WHO-schaal
+(18,5 · 25 · 30) en taille/lengte-ratio als er een taillemeting is (< 0,5 = gezond). Met uitleg dat BMI spieren niet van vet onderscheidt.
