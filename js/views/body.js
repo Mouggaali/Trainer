@@ -2,6 +2,7 @@ import { getState, update, uid } from '../store.js';
 import { esc, on, go, icon, fmtNum, fmtDate, todayISO, isoToTs, num, confirmDialog, toast, sheetPromise } from '../ui.js';
 import { lineChart } from '../charts.js';
 import { renderFood, mountFood } from './food.js';
+import { navyBodyFat, bodyFatCategory } from '../nutrition.js';
 
 const PART_KEY = 'trainer.bodyPart';
 function lastPart() { try { return localStorage.getItem(PART_KEY) || 'food'; } catch { return 'food'; } }
@@ -90,7 +91,74 @@ function bmiCard(latest, lastM) {
     ${whtr ? `<p class="muted small">Taille/lengte: <b>${fmtNum(whtr, 2)}</b> ${whtr < 0.5 ? '(gezond, onder 0,5)' : '(boven 0,5: let op buikvet)'}</p>` : ''}
     <p class="muted small">Let op: BMI ziet geen verschil tussen spieren en vet. Bij krachtsporters valt hij vaak hoger uit
       dan hun vetpercentage doet vermoeden; je taille (in je metingen) zegt meer.
-      <button class="link-btn link-inline" data-action="bmi-height">Lengte wijzigen</button></p>
+      <button class="link-btn link-inline" data-action="bmi-height">Lengte/geslacht wijzigen</button></p>
+  </section>`;
+}
+
+/** Weighing on or before a date (else the first one). */
+function weightAt(bw, iso) {
+  let kg = bw[0]?.kg ?? null;
+  for (const b of bw) { if (b.date <= iso) kg = b.kg; else break; }
+  return kg;
+}
+
+/** Body-fat estimate (Navy method) per measurement, with fat and lean mass from the weighing of that day. */
+function bodyFatSeries(bw, ms) {
+  const body = getState().profile.body || {};
+  return ms.map((m) => {
+    const bf = navyBodyFat({ sex: body.sex, heightCm: body.heightCm, waist: m.values.waist, neck: m.values.neck, hips: m.values.hips });
+    if (bf == null) return null;
+    const kg = weightAt(bw, m.date);
+    return { date: m.date, bf, kg, fat: kg != null ? (kg * bf) / 100 : null, lean: kg != null ? kg * (1 - bf / 100) : null };
+  }).filter(Boolean);
+}
+
+function signed(n, d = 1) { return `${n > 0 ? '+' : ''}${fmtNum(n, d)}`; }
+
+function bodyFatCard(bw, ms) {
+  const body = getState().profile.body || {};
+  const female = body.sex === 'f';
+  const need = female ? 'taille, heupen en nek' : 'taille (op navelhoogte) en nek';
+  if (!body.heightCm) return '';
+  const series = bodyFatSeries(bw, ms);
+  const last = series.at(-1);
+  if (!last) {
+    return `<section class="card">
+      <div class="card-head"><div><h2>Vetpercentage</h2><div class="muted small">Schatting met de Navy-methode</div></div></div>
+      <p class="sheet-text">Meet je ${need} bij een nieuwe meting, dan schat je trainer je vetpercentage en zie je of je aankomt in spieren of in vet.</p>
+      <button class="btn btn-primary btn-block" data-action="go" data-href="#/measure/new">${icon('plus')} Meting</button>
+    </section>`;
+  }
+  const first = series[0];
+  const cat = bodyFatCategory(last.bf, body.sex);
+  const manual = [...ms].reverse().find((m) => m.values.bodyfat != null);
+  let change = '';
+  if (series.length > 1 && last.lean != null && first.lean != null) {
+    const dLean = last.lean - first.lean;
+    const dFat = last.fat - first.fat;
+    const verdict = dLean > 0 && dFat <= dLean ? 'Je komt vooral aan in spiermassa. Zo moet een bulk eruitzien!'
+      : dLean > 0 ? 'Je komt meer aan in vet dan in spieren: overweeg je caloriedoel iets te verlagen.'
+      : dFat < 0 ? 'Je verliest vet. Hou je eiwit hoog om je spieren te behouden.'
+      : 'Nog weinig verandering; meet elke 2–4 weken voor een duidelijk beeld.';
+    change = `<div class="goal-grid">
+      <div><span>Vetvrije massa</span><b>${signed(dLean)} kg</b></div>
+      <div><span>Vetmassa</span><b>${signed(dFat)} kg</b></div>
+    </div>
+    <p class="food-tip">${verdict} <span class="muted">(sinds ${fmtDate(isoToTs(first.date), { day: 'numeric', month: 'short' })})</span></p>`;
+  }
+  return `<section class="card">
+    <div class="card-head"><div><h2>Vetpercentage</h2><div class="muted small">Schatting (Navy-methode) · ${fmtDate(isoToTs(last.date), { day: 'numeric', month: 'short' })}</div></div>
+      <div class="big-num">${fmtNum(last.bf, 1)}<small>%</small></div></div>
+    <p class="bmi-cat ${cat.cls}">${cat.label}</p>
+    ${last.lean != null ? `<div class="goal-grid">
+      <div><span>Vetvrije massa</span><b>${fmtNum(last.lean, 1)} kg</b></div>
+      <div><span>Vetmassa</span><b>${fmtNum(last.fat, 1)} kg</b></div>
+    </div>` : ''}
+    ${change}
+    ${series.length > 1 ? lineChart({ series: [{ name: 'Vet %', points: series.map((x) => ({ x: isoToTs(x.date), y: x.bf })) }] }) : ''}
+    ${manual ? `<p class="muted small">Zelf ingevuld (${fmtDate(isoToTs(manual.date), { day: 'numeric', month: 'short' })}): ${fmtNum(manual.values.bodyfat, 1)}%.</p>` : ''}
+    <p class="muted small">Gebaseerd op ${need} en je lengte. Een schatting (±3–4%), maar op hetzelfde moment en op dezelfde plek gemeten
+      laat hij goed zien welke kant het op gaat.</p>
   </section>`;
 }
 
@@ -145,6 +213,7 @@ export function renderBody() {
     </section>
 
     ${bmiCard(latest, lastM)}
+    ${bodyFatCard(bw, ms)}
 
     <section class="card">
       <div class="card-head"><div><h2>Omtrekmaten</h2><div class="muted small">in cm, links en rechts apart</div></div>
@@ -193,11 +262,14 @@ export function renderMeasureForm(id) {
 
 on({
   'bmi-height': async () => {
-    const cur = getState().profile.body?.heightCm;
+    const body = getState().profile.body || {};
+    const cur = body.heightCm;
     const { el, result } = sheetPromise(`
-      <h3 class="sheet-title">Lengte</h3>
+      <h3 class="sheet-title">Lengte en geslacht</h3>
+      <p class="sheet-text">Nodig voor je BMI en de schatting van je vetpercentage.</p>
       <form class="form" onsubmit="return false">
         <label>Lengte in cm<input id="h-cm" inputmode="numeric" value="${cur || ''}" placeholder="180"></label>
+        <label>Geslacht<select id="h-sex"><option value="m" ${body.sex !== 'f' ? 'selected' : ''}>Man</option><option value="f" ${body.sex === 'f' ? 'selected' : ''}>Vrouw</option></select></label>
         <div class="sheet-actions">
           <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="ok">Opslaan</button>
           <button class="btn btn-secondary btn-block" data-action="sheet-dismiss" type="button">Annuleren</button>
@@ -205,11 +277,13 @@ on({
       </form>`);
     const input = el.querySelector('#h-cm');
     let v = input.value;
+    let sex = el.querySelector('#h-sex').value;
     input.addEventListener('input', () => { v = input.value; });
+    el.querySelector('#h-sex').addEventListener('change', (e) => { sex = e.target.value; });
     if ((await result) !== 'ok') return;
     const h = num(v);
     if (!(h > 120 && h < 230)) return toast('Vul een lengte tussen 120 en 230 cm in');
-    update((s) => { s.profile.body = { ...(s.profile.body || {}), heightCm: Math.round(h) }; });
+    update((s) => { s.profile.body = { ...(s.profile.body || {}), heightCm: Math.round(h), sex }; });
   },
   'bw-add': () => {
     const kg = num(document.getElementById('bw-kg').value);

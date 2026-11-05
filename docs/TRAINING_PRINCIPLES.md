@@ -80,3 +80,9 @@ Belangrijkste volumemaat voor hypertrofie: harde werksets per spiergroep per wee
   dagen (≥ 800 kcal, vandaag telt niet mee) en ≥ 3 wegingen zijn: trend = lineaire regressie door de wegingen;
   verbruik-schatting = gem. inname − trend(kg/dag) × 7700; nieuw verbruik = 0,7 × oud + 0,3 × schatting,
   max ±150 kcal per week. Komt sneller aan dan gewenst → doel omlaag, langzamer → omhoog.
+
+## Vetpercentage (`navyBodyFat` in `js/nutrition.js`, kaart in Lichaam → Gewicht & maten)
+- US Navy-methode met lintmaten in cm. Man: 495 / (1,0324 − 0,19077·log10(taille − nek) + 0,15456·log10(lengte)) − 450.
+  Vrouw: 495 / (1,29579 − 0,35004·log10(taille + heupen − nek) + 0,221·log10(lengte)) − 450. Fout ±3–4%, maar goed voor trends.
+- Categorie (ACE), vetvrije massa en vetmassa met de weging van die meetdag; verandering sinds de eerste schatting met oordeel
+  (vooral spiermassa erbij = goede bulk; meer vet dan spier = caloriedoel iets omlaag).

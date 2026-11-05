@@ -167,3 +167,30 @@ export function longestDayRun(dates) {
   }
   return best;
 }
+
+/**
+ * US Navy body-fat estimate (%), tape measurements in cm. Men: waist (at navel) + neck; women also hips.
+ * Typical error ±3–4 %-points vs. DEXA, but consistent over time → good for trends.
+ */
+export function navyBodyFat({ sex = 'm', heightCm, waist, neck, hips }) {
+  if (!heightCm || !waist || !neck) return null;
+  const log = Math.log10;
+  let bf;
+  if (sex === 'f') {
+    if (!hips || waist + hips - neck <= 0) return null;
+    bf = 495 / (1.29579 - 0.35004 * log(waist + hips - neck) + 0.221 * log(heightCm)) - 450;
+  } else {
+    if (waist - neck <= 0) return null;
+    bf = 495 / (1.0324 - 0.19077 * log(waist - neck) + 0.15456 * log(heightCm)) - 450;
+  }
+  return bf > 2 && bf < 60 ? Math.round(bf * 10) / 10 : null;
+}
+
+/** ACE body-fat categories. */
+export function bodyFatCategory(bf, sex = 'm') {
+  const cats = sex === 'f'
+    ? [[14, 'Essentieel vet', 'is-low'], [21, 'Atletisch', 'is-ok'], [25, 'Fit', 'is-ok'], [32, 'Gemiddeld', 'is-mid'], [Infinity, 'Hoog', 'is-high']]
+    : [[6, 'Essentieel vet', 'is-low'], [14, 'Atletisch', 'is-ok'], [18, 'Fit', 'is-ok'], [25, 'Gemiddeld', 'is-mid'], [Infinity, 'Hoog', 'is-high']];
+  const [, label, cls] = cats.find(([max]) => bf < max);
+  return { label, cls };
+}
