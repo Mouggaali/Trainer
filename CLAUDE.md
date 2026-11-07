@@ -98,6 +98,17 @@ node server.js
 ```
 Open http://localhost:5173. Op de telefoon (zelfde wifi): het LAN-adres dat de server print.
 
+## Testen
+```bash
+npm ci && npx playwright install webkit chromium   # eenmalig
+npm test                                           # alle tests (iPhone/WebKit + desktop Chrome)
+```
+- Playwright-tests in `tests/` (`fixtures.js` = gedeelde setup): `js/config.js` wordt in tests vervangen (geen login-gate,
+  geen echte Supabase), Open Food Facts gemockt met vaste producten, en elke test faalt bij console-fouten of
+  CSP-overtredingen. Seed-data via `test.use({ seed: seedState({...}) })`.
+- GitHub Actions draait de tests vóór elke deploy (`needs: test`); faalt er één, dan blijft de vorige versie live.
+- Na een nieuwe feature: test toevoegen in `tests/`. npm is alleen voor tests — de app zelf heeft geen build-stap.
+
 ## Belangrijk
 - Bestaande gebruikersdata nooit breken: bij schemawijzigingen `version` ophogen en een migratie in
   `store.js` → `migrate()` toevoegen.

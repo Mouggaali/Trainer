@@ -10,3 +10,5 @@ supabase/*.local.sql
 
 # Supabase CLI working files
 supabase/.temp/
+test-results/
+playwright-report/

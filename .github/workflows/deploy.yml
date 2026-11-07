@@ -19,7 +19,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # End-to-end tests (Playwright, iPhone/WebKit + desktop Chrome). A failing test stops the deploy,
+  # so the version that is live keeps working. Report: Actions → this run → Artifacts → playwright-report.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit chromium
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     environment:
       name: github-pages
