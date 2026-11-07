@@ -7,15 +7,19 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 5_000 },
   fullyParallel: true,
-  workers: process.env.CI ? 2 : 3, // node server.js is a tiny single-process dev server
+  // Locally one browser at a time: several WebKit instances on Windows stall each other's requests (20 s+ page loads).
+  workers: process.env.CI ? 2 : 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://127.0.0.1:5173', // not localhost: WebKit on Windows may try IPv6 (::1) first, the dev server is IPv4
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     serviceWorkers: 'block', // the network-first SW would only get in the way of request mocks
+    // The pixel-style sheets slide in with steps(): Playwright sees a still frame between steps, clicks, and the
+    // button moves on (sometimes the click lands on the backdrop). Reduced motion turns the animations off.
+    reducedMotion: 'reduce',
   },
   projects: [
     { name: 'iphone', use: { ...devices['iPhone 15'] } },
@@ -23,7 +27,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'node server.js',
-    url: 'http://localhost:5173',
+    url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 20_000,
   },

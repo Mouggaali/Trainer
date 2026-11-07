@@ -32,7 +32,7 @@ test('niets wordt van een CDN of Google geladen', async ({ page }) => {
   const external = [];
   page.on('request', (r) => {
     const host = new URL(r.url()).host;
-    if (host && host !== 'localhost:5173') external.push(host);
+    if (host && host !== '127.0.0.1:5173') external.push(host);
   });
   await page.goto('/#/profile');
   await expect(page.locator('#view')).toContainText('Team');
