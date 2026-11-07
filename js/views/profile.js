@@ -1,5 +1,5 @@
 import { getState, update, getExercise, exerciseSessions, exportData, importData, resetData } from '../store.js';
-import { esc, on, go, icon, fmtNum, fmtVolume, confirmDialog, toast, relDays } from '../ui.js';
+import { esc, on, go, icon, fmtNum, fmtVolume, confirmDialog, toast, relDays, sheetPromise } from '../ui.js';
 import { barChart, lineChart } from '../charts.js';
 import { workingSets } from '../progression.js';
 import { weeklyStats, weekStreak, bestE1rm, exerciseRecords, trainedExercises, setVolume } from '../stats.js';
@@ -7,7 +7,7 @@ import { REST_OPTIONS, restLabel } from './templates.js';
 import { renderTrainerCard, renderTeamParty, badgeCase } from './team.js';
 import { pushStatus, enablePush, disablePush } from '../push.js';
 import { SOUNDS, previewSound } from '../sound.js';
-import { syncInfo, statusText, setNewPassword, syncNow, logout } from '../sync.js';
+import { syncInfo, statusText, setNewPassword, syncNow, logout, deleteAccount } from '../sync.js';
 import { volumeReport } from '../volume.js';
 import { computeTeam } from '../game/xp.js';
 import { monsterSprite } from '../game/monsters.js';
@@ -187,14 +187,16 @@ function syncCard() {
     body = '<p class="muted small">Nog niet ingesteld. Run <code>node tools/build-config.js</code> om js/config.js te maken.</p>';
   } else if (i.recovery) {
     body = `<p class="muted small">Kies een nieuw wachtwoord voor <strong>${esc(i.email || '')}</strong>.</p>
-      <form class="form" onsubmit="return false">
+      <form class="form">
         <label>Nieuw wachtwoord<input type="password" id="sync-newpw" autocomplete="new-password" minlength="6"></label>
         <button class="btn btn-primary btn-block" data-action="sync-newpw">Wachtwoord opslaan</button>
       </form>`;
   } else if (i.email) {
     body = `<div class="li-title">${esc(i.email)}</div><div class="muted small" data-sync-status>${esc(statusText())}</div>
       <button class="btn btn-soft btn-block" data-action="sync-now">Nu synchroniseren</button>
-      <button class="btn btn-secondary btn-block" data-action="sync-logout">Uitloggen</button>`;
+      <button class="btn btn-secondary btn-block" data-action="sync-logout">Uitloggen</button>
+      <button class="link-btn" data-action="go" data-href="#/privacy">Privacyverklaring ${icon('chevronRight')}</button>
+      <button class="btn btn-danger-soft btn-block" data-action="account-delete">${icon('trash')} Account verwijderen</button>`;
   } else {
     body = `<div class="muted small" data-sync-status>${esc(statusText())}</div>`;
   }
@@ -209,11 +211,33 @@ const busy = async (el, fn) => {
 on({
   'sync-newpw': (el) => busy(el, async () => {
     const pw = document.getElementById('sync-newpw').value;
-    if (pw.length < 6) throw new Error('Wachtwoord moet minstens 6 tekens zijn');
+    if (pw.length < 8 || !/[a-z]/i.test(pw) || !/\d/.test(pw)) throw new Error('Kies een wachtwoord van minstens 8 tekens met letters en cijfers');
     await setNewPassword(pw);
     toast('Nieuw wachtwoord opgeslagen');
   }),
   'sync-now': (el) => busy(el, syncNow),
+  'account-delete': async (el) => {
+    const { el: sheet, result } = sheetPromise(`
+      <h3 class="sheet-title">Account verwijderen?</h3>
+      <p class="sheet-text">Je account en <b>al je data</b> in de cloud worden definitief gewist: trainingen, voeding,
+        lichaamsdata en back-ups. Dit kan niet ongedaan worden. Tip: exporteer eerst een back-up.</p>
+      <form class="form">
+        <label>Typ VERWIJDER om te bevestigen<input id="del-confirm" autocomplete="off" autocapitalize="characters"></label>
+        <div class="sheet-actions">
+          <button class="btn btn-danger btn-block" data-action="sheet-resolve" data-value="ok">Definitief verwijderen</button>
+          <button class="btn btn-secondary btn-block" data-action="sheet-dismiss" type="button">Annuleren</button>
+        </div>
+      </form>`);
+    const input = sheet.querySelector('#del-confirm');
+    let typed = '';
+    input.addEventListener('input', () => { typed = input.value; });
+    if ((await result) !== 'ok') return;
+    if (typed.trim().toUpperCase() !== 'VERWIJDER') return toast('Typ VERWIJDER om te bevestigen');
+    busy(el, async () => {
+      await deleteAccount();
+      toast('Je account en data zijn verwijderd');
+    });
+  },
   'push-on': (el) => busy(el, async () => { await enablePush(); toast('Meldingen staan aan 🔔'); mountSettings(); }),
   'push-off': (el) => busy(el, async () => { await disablePush(); toast('Meldingen staan uit'); mountSettings(); }),
   'sync-logout': async (el) => {

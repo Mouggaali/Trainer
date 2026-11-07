@@ -224,3 +224,10 @@ textarea { width: 100%; background: var(--paper-2); border: 0; box-shadow: var(-
 .bmi-cat.is-mid { color: var(--hp-yellow-dark); }
 .bmi-cat.is-high { color: var(--hp-red-dark); }
 .link-inline { min-height: 0; padding: 0; display: inline; font-size: 9px; }
+
+/* ---------- Privacy ---------- */
+.prose h2 { margin: 14px 0 6px; }
+.prose h2:first-child { margin-top: 0; }
+.prose p, .prose li { font-size: 20px; line-height: 1.25; }
+.prose ul { padding-left: 20px; margin: 0 0 8px; }
+.text-link { color: var(--fire); text-decoration: underline; }

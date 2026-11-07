@@ -178,7 +178,7 @@ export function renderFoodAdd(meal = 'snack') {
       <button class="btn btn-primary" data-action="food-scan" data-meal="${esc(meal)}">${icon('search')} Scan barcode</button>
       <button class="btn btn-soft" data-action="food-new" data-meal="${esc(meal)}">${icon('plus')} Nieuw product</button>
     </div>
-    <form class="search-form" onsubmit="return false">
+    <form class="search-form">
       <input class="select" id="food-q" type="search" enterkeyhint="search" placeholder="Zoek product, bv. magere kwark" value="${esc(query)}" data-input="food-q" data-live>
       <button class="btn btn-secondary" data-action="food-search">${searching ? '…' : 'Zoek'}</button>
     </form>
@@ -237,7 +237,7 @@ async function amountSheet(food, { grams, title = 'Toevoegen', del = false } = {
   const { el, result } = sheetPromise(`
     <h3 class="sheet-title">${esc(food.name)}</h3>
     <p class="sheet-text">${food.brand ? `${esc(food.brand)} · ` : ''}per 100 <span data-unit>${unit}</span>: ${food.per100.kcal} kcal · E ${fmtNum(food.per100.protein, 1)} · K ${fmtNum(food.per100.carbs, 1)} · V ${fmtNum(food.per100.fat, 1)}</p>
-    <form class="form" onsubmit="return false">
+    <form class="form">
       <div class="amt-row"><label>Hoeveelheid<input id="amt-g" inputmode="decimal" value="${fmtNum(start, 1)}"></label>
         <div class="unit-toggle" role="group" aria-label="Eenheid">${['g', 'ml'].map((u) => `<button type="button" class="${u === unit ? 'on' : ''}" data-unit-set="${u}">${u}</button>`).join('')}</div></div>
       <div class="chip-row">${quick.map((g) => `<button type="button" class="chip-btn" data-g="${g}">${g === food.serving?.g ? `1 portie (${fmtNum(g, 0)} <span data-unit>${unit}</span>)` : `${fmtNum(g, 0)} <span data-unit>${unit}</span>`}</button>`).join('')}</div>
@@ -343,7 +343,7 @@ async function saveMeal(mealId) {
   const { el, result } = sheetPromise(`
     <h3 class="sheet-title">Vaste maaltijd opslaan</h3>
     <p class="sheet-text">${list.map((e) => `${esc(e.name)} (${g1(e.grams)} ${unitOf(e)})`).join(', ')}</p>
-    <form class="form" onsubmit="return false">
+    <form class="form">
       <label>Naam<input id="meal-name" maxlength="40" value="${esc(mealLabel(mealId))}"></label>
       <div class="sheet-actions">
         <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="ok">Opslaan</button>
@@ -409,7 +409,7 @@ async function productForm(meal, preset = {}) {
   const { el, result } = sheetPromise(`
     <h3 class="sheet-title">Nieuw product</h3>
     <p class="sheet-text">Neem de waarden per 100 g (of 100 ml bij drinken) over van het etiket.</p>
-    <form class="form" id="np-form" onsubmit="return false">
+    <form class="form" id="np-form">
       <label>Naam<input name="name" value="${esc(preset.name || '')}" maxlength="80" placeholder="Magere kwark"></label>
       <label>Merk (optioneel)<input name="brand" value="${esc(preset.brand || '')}" maxlength="40"></label>
       <div class="np-grid">
@@ -470,7 +470,7 @@ async function setupSheet() {
   const { el, result } = sheetPromise(`
     <h3 class="sheet-title">Voedingsdoel</h3>
     <p class="sheet-text">Je trainer schat je verbruik en past het daarna elke week aan op basis van je gewichtstrend.</p>
-    <form class="form" id="ns-form" onsubmit="return false">
+    <form class="form" id="ns-form">
       <label>Doel${sel('goal', GOALS, n.goal || 'bulk')}</label>
       <div class="np-grid">
         <label>Geslacht${sel('sex', { m: 'Man', f: 'Vrouw' }, b.sex || 'm')}</label>
@@ -549,7 +549,7 @@ on({
   'food-code': async (el) => {
     const { el: sheet, result } = sheetPromise(`
       <h3 class="sheet-title">Barcode intypen</h3>
-      <form class="form" onsubmit="return false"><label>Cijfers onder de streepjes<input id="code-in" inputmode="numeric" maxlength="14"></label>
+      <form class="form"><label>Cijfers onder de streepjes<input id="code-in" inputmode="numeric" maxlength="14"></label>
       <div class="sheet-actions"><button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="ok">Opzoeken</button>
       <button class="btn btn-secondary btn-block" data-action="sheet-dismiss" type="button">Annuleren</button></div></form>`);
     const input = sheet.querySelector('#code-in');

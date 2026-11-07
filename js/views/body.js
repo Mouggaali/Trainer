@@ -267,7 +267,7 @@ on({
     const { el, result } = sheetPromise(`
       <h3 class="sheet-title">Lengte en geslacht</h3>
       <p class="sheet-text">Nodig voor je BMI en de schatting van je vetpercentage.</p>
-      <form class="form" onsubmit="return false">
+      <form class="form">
         <label>Lengte in cm<input id="h-cm" inputmode="numeric" value="${cur || ''}" placeholder="180"></label>
         <label>Geslacht<select id="h-sex"><option value="m" ${body.sex !== 'f' ? 'selected' : ''}>Man</option><option value="f" ${body.sex === 'f' ? 'selected' : ''}>Vrouw</option></select></label>
         <div class="sheet-actions">

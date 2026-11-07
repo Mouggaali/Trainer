@@ -7,3 +7,6 @@ js/config.js
 _site/
 supabase/functions/.env
 supabase/*.local.sql
+
+# Supabase CLI working files
+supabase/.temp/

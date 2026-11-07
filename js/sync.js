@@ -4,7 +4,7 @@
 import { getState, replaceState, onSave, clearLocalData } from './store.js';
 import { choose, todayISO } from './ui.js';
 
-const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+const SUPABASE_JS = './vendor/supabase.js'; // @supabase/supabase-js 2.45.4, self-hosted (tools/vendor.js)
 const META_KEY = 'trainer.sync';
 const AUTH_KEY = 'trainer.auth'; // supabase-js session storage key
 
@@ -186,7 +186,11 @@ async function backup(data) {
 
 function fail(e) {
   console.error('Sync', e);
-  setStatus(navigator.onLine === false ? 'offline' : 'error', e?.message || String(e));
+  // supabase/hardening.sql caps one user's data at 5 MB
+  const msg = /app_state_size|check constraint/i.test(e?.message || '')
+    ? 'Je data is te groot om in de cloud op te slaan (max. 5 MB). Exporteer een back-up via Instellingen.'
+    : e?.message || String(e);
+  setStatus(navigator.onLine === false ? 'offline' : 'error', msg);
 }
 
 // ---------- Auth (e-mail + wachtwoord) ----------
@@ -194,7 +198,7 @@ const AUTH_ERRORS = [
   [/invalid login credentials/i, 'E-mail of wachtwoord klopt niet'],
   [/email not confirmed/i, 'Bevestig eerst je e-mailadres via de link in de mail'],
   [/already registered/i, 'Dit e-mailadres heeft al een account. Log in.'],
-  [/password should be at least/i, 'Wachtwoord moet minstens 6 tekens zijn'],
+  [/password should be at least|password should contain|weak password/i, 'Kies een wachtwoord van minstens 8 tekens met letters en cijfers'],
   [/rate limit|too many/i, 'Te veel pogingen. Wacht even en probeer opnieuw.'],
 ];
 function authError(error) {
@@ -237,6 +241,19 @@ export async function logout() {
   const ok = await push();
   if (!ok) throw new Error('Geen verbinding: je laatste wijzigingen staan nog niet in de cloud. Probeer het straks opnieuw.');
   await sb.auth.signOut();
+  try { localStorage.removeItem(META_KEY); } catch { /* ignore */ }
+  clearLocalData();
+}
+
+/**
+ * Deletes the account and all cloud data (Edge Function delete-account), then wipes this device.
+ * Throws when offline or when the server refuses; nothing is deleted locally then.
+ */
+export async function deleteAccount() {
+  if (!sb || !user) throw new Error('Je bent niet ingelogd');
+  const { error } = await sb.functions.invoke('delete-account', { method: 'POST' });
+  if (error) throw new Error('Verwijderen is niet gelukt. Controleer je verbinding en probeer het opnieuw.');
+  await sb.auth.signOut().catch(() => {});
   try { localStorage.removeItem(META_KEY); } catch { /* ignore */ }
   clearLocalData();
 }

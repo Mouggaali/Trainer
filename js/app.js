@@ -13,6 +13,7 @@ import { renderMonsterDetail } from './views/team.js';
 import { renderWorkoutEdit } from './views/workout-edit.js';
 import { initSync, onSyncChange, statusText, gateState } from './sync.js';
 import { renderLogin, renderSplash } from './views/login.js';
+import { renderPrivacy } from './views/privacy.js';
 
 const routes = {
   workout: { render: renderHome, tab: 'workout' },
@@ -21,6 +22,7 @@ const routes = {
   history: { render: (id) => (id ? renderWorkoutDetail(id) : renderHistory()), tab: 'history' },
   'workout-edit': { render: renderWorkoutEdit, tab: 'history' },
   profile: { render: renderProfile, tab: 'profile' },
+  privacy: { render: renderPrivacy, tab: 'profile' },
   settings: { render: renderSettings, mount: mountSettings, tab: 'profile' },
   exercises: { render: (id) => renderExercises(id), mount: mountExercises, tab: 'exercises' },
   exercise: { render: renderExerciseDetail, tab: 'exercises' },
@@ -74,8 +76,9 @@ async function syncWakeLock() {
 function render() {
   lastGate = gateState();
   if (lastGate !== 'open') {
-    // Login gate: nothing of the app is shown until the user is signed in.
-    view.innerHTML = lastGate === 'splash' ? renderSplash() : renderLogin();
+    // Login gate: nothing of the app is shown until the user is signed in (except the privacy statement).
+    const publicPage = parseRoute().root === 'privacy';
+    view.innerHTML = publicPage ? renderPrivacy() : lastGate === 'splash' ? renderSplash() : renderLogin();
     document.body.dataset.route = 'login';
     for (const id of ['tabbar', 'workout-bar', 'rest-bar']) document.getElementById(id).innerHTML = '';
     document.body.classList.remove('has-workout-bar', 'has-rest');
@@ -183,6 +186,8 @@ document.addEventListener('input', onInput);
 document.addEventListener('change', onInput);
 document.addEventListener('focusin', (e) => { if (e.target.matches('.set-input')) setTimeout(() => e.target.select(), 0); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+// Forms never navigate (the CSP blocks inline onsubmit handlers); buttons use data-action instead.
+document.addEventListener('submit', (e) => e.preventDefault());
 
 window.addEventListener('hashchange', () => { closeSheet(); view.scrollTop = 0; render(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); syncWakeLock(); });

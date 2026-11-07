@@ -1,6 +1,6 @@
 // Network-first service worker: always fresh when online, cached copy when offline (gym basement).
 // Google Fonts (pixel theme) use stale-while-revalidate so they also work offline.
-const CACHE = 'trainer-v2';
+const CACHE = 'trainer-v3';
 const FONT_CACHE = 'trainer-fonts-v1';
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 

@@ -25,7 +25,7 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
 ## Tech stack
 - **Geen build-stap**: vanilla JavaScript (ES modules), HTML, CSS. Openen = draaien.
 - **Opslag**: `localStorage` (key `trainer.v1`) via `js/store.js`, gespiegeld naar Supabase
-  (`public.app_state`, één JSON-rij per gebruiker) door `js/sync.js`. supabase-js komt via jsDelivr CDN.
+  (`public.app_state`, één JSON-rij per gebruiker) door `js/sync.js`.
 - **Secrets**: de gebruiker wil **geen keys in de GitHub-repo**. `.env` en `js/config.js` zijn gitignored;
   `tools/build-config.js` maakt `js/config.js` uit `.env` (lokaal) of uit repo secrets (GitHub Actions).
 - **Login verplicht**: `gateState()` (`js/sync.js`) bepaalt in `render()` of de app of het inlogscherm
@@ -41,6 +41,13 @@ voor de volgende sessie. Claude fungeert in dit project ook als **persoonlijke t
   Vangnet: `html.ios-short` zet `--safe-b` op 0 als het venster toch kort blijft. Schermmaten onderaan Instellingen.
 - **Layout**: de pagina scrolt zelf nooit; `#view` is de scroller en de werk-/rustbalk + tabbalk zijn flex-kinderen
   eronder (`position: fixed` balken driften op iOS los van de scrollende pagina). Nieuwe overlays mogen wel fixed.
+- **Geen CDN's**: supabase-js, de barcodescanner (+ `zxing_reader.wasm`) en de pixelfonts staan in `js/vendor/`, `fonts/`
+  en `css/fonts.css`, gemaakt met `node tools/vendor.js` (versies bovenin dat script). Een **Content-Security-Policy**
+  in `index.html` staat alleen eigen bestanden, `*.supabase.co` en Open Food Facts toe → geen inline scripts of
+  `onsubmit=`-attributen (forms: `submit` wordt globaal tegengehouden in `js/app.js`). Nieuwe externe host = CSP aanpassen.
+- **Delen met anderen**: `supabase/hardening.sql` (groottelimieten, max. 30 back-ups/5 pushabonnementen, policies
+  `to authenticated` + `(select auth.uid())`), Edge Function `delete-account` (Instellingen → Account verwijderen),
+  privacyverklaring `#/privacy` (ook zonder login). Aanmelden staat open; wachtwoord ≥ 8 tekens met letters en cijfers.
 - **PWA**: `manifest.webmanifest` + `sw.js` (network-first) → installeerbaar op het beginscherm.
 - **Charts**: eigen kleine SVG-charts in `js/charts.js` (geen libraries).
 - **Dev-server**: `node server.js` → http://localhost:5173 (ook bereikbaar via LAN-IP voor de telefoon).
@@ -54,6 +61,7 @@ js/store.js           state, opslag, seed-data, queries (exerciseSessions, allEx
 js/sync.js            Supabase login (e-mail + wachtwoord) + push/pull van de state
 js/sound.js           einde-rust-geluiden (zelf gesynthetiseerd, WAV via <audio>, iOS audioSession 'transient' = mengt met muziek)
 js/push.js            Web Push: abonnement + rest_timers plannen/verplaatsen/annuleren
+js/vendor/            zelf-gehoste libraries (supabase.js, barcode-detector.js, zxing_reader.wasm) — niet bewerken
 js/config.js          GEGENEREERD, gitignored (Supabase URL + publishable key)
 js/progression.js     gewichtsadvies-algoritme + e1RM
 js/stats.js           weekstatistieken, volume, streaks, records

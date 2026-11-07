@@ -2,7 +2,8 @@
 // iOS Safari has no native BarcodeDetector, so a zxing-wasm polyfill is loaded the first time the scanner opens.
 
 const FIELDS = 'code,product_name,product_name_nl,brands,nutriments,serving_quantity,serving_size,quantity,product_quantity_unit,serving_quantity_unit';
-const SCANNER_LIB = 'https://cdn.jsdelivr.net/npm/barcode-detector@3.2.2/+esm';
+const SCANNER_LIB = './vendor/barcode-detector.js'; // barcode-detector 3.2.2, self-hosted (tools/vendor.js)
+const ZXING_WASM = new URL('./vendor/zxing_reader.wasm', import.meta.url).href;
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
 
 const r1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
@@ -54,7 +55,13 @@ async function getDetector() {
   if (!Detector) {
     const native = window.BarcodeDetector;
     const ok = native && (await native.getSupportedFormats?.().catch(() => []))?.includes('ean_13');
-    Detector = ok ? native : (await import(SCANNER_LIB)).BarcodeDetector;
+    if (ok) Detector = native;
+    else {
+      const lib = await import(SCANNER_LIB);
+      // load the WebAssembly reader from our own site instead of the jsDelivr default
+      lib.prepareZXingModule({ overrides: { locateFile: (path, prefix) => (path.endsWith('.wasm') ? ZXING_WASM : prefix + path) } });
+      Detector = lib.BarcodeDetector;
+    }
   }
   return new Detector({ formats: FORMATS });
 }

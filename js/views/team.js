@@ -156,7 +156,7 @@ on({
     const current = nick()[muscle] || '';
     const { el: sheet, result } = sheetPromise(`
       <h3 class="sheet-title">Bijnaam</h3>
-      <form class="form" onsubmit="return false">
+      <form class="form">
         <label>Bijnaam voor ${esc(monsterName(muscle, t.form))}<input id="mon-nick" maxlength="12" value="${esc(current)}" placeholder="leeg = standaardnaam"></label>
         <div class="sheet-actions">
           <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="save">Opslaan</button>

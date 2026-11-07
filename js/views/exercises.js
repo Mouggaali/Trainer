@@ -77,7 +77,7 @@ export async function editNote(exerciseId) {
   const { el, result } = sheetPromise(`
     <h3 class="sheet-title">Notitie</h3>
     <p class="sheet-text">${esc(getExercise(exerciseId).name)}</p>
-    <form class="form" onsubmit="return false">
+    <form class="form">
       <label>Bv. stoelstand, grip, techniekpunt<textarea id="note-text" rows="4" maxlength="300" placeholder="Stoel op stand 4, ellebogen iets naar binnen">${esc(current)}</textarea></label>
       <div class="sheet-actions">
         <button class="btn btn-primary btn-block" data-action="sheet-resolve" data-value="save">Opslaan</button>
@@ -154,7 +154,7 @@ export async function editExercise(id = null) {
   const ex = id ? getExercise(id) : { name: '', equipment: 'barbell', muscle: 'Borst', lower: false };
   const { result } = sheetPromise(`
     <h3 class="sheet-title">${id ? 'Oefening bewerken' : 'Nieuwe oefening'}</h3>
-    <form class="form" id="ex-form" data-id="${esc(id || '')}" onsubmit="return false">
+    <form class="form" id="ex-form" data-id="${esc(id || '')}">
       <label>Naam<input name="name" value="${esc(ex.name)}" placeholder="bv. Cable Fly (Cable)" required></label>
       <label>Equipment<select name="equipment">${Object.entries(EQUIPMENT).map(([k, v]) => `<option value="${k}" ${k === ex.equipment ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
       <label>Spiergroep<select name="muscle">${MUSCLES.map((m) => `<option ${m === ex.muscle ? 'selected' : ''}>${m}</option>`).join('')}</select></label>

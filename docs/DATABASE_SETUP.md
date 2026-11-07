@@ -94,3 +94,14 @@ Eenmalige setup:
    `npx supabase secrets set --env-file supabase/functions/.env --project-ref holyuoqbiwhkszxkxuhh`.
 4. GitHub repo secret `VAPID_PUBLIC_KEY` (waarde uit `.env`).
 5. iPhone: app vanaf beginscherm → Instellingen → Meldingen aanzetten.
+
+## Klaar maken om te delen (beveiliging)
+1. **SQL**: plak `supabase/hardening.sql` in de SQL Editor en klik Run (mag vaker). Daarna: Advisors → Security Advisor.
+2. **Account verwijderen**: Edge Function `delete-account` (JWT verplicht; verwijdert de auth-gebruiker, `on delete cascade`
+   wist de rest). Deploy: `npx supabase functions deploy delete-account --remote=holyuoqbiwhkszxkxuhh --use-api`.
+3. **Dashboard → Authentication**:
+   - Sign In / Providers → Email: *Confirm email* aan; *Minimum password length* 8; *Password requirements*: letters en cijfers.
+   - Emails → SMTP Settings: eigen SMTP (bv. Resend). De ingebouwde mailserver verstuurt maar enkele mails per uur,
+     dus nieuwe gebruikers krijgen anders geen bevestigingsmail.
+   - URL Configuration: Site URL `https://mouggaali.github.io/Trainer/` (staat er al voor de mails).
+   - Rate Limits: standaard laten; CAPTCHA (Cloudflare Turnstile) pas toevoegen als er nep-accounts komen.
