@@ -1,4 +1,4 @@
-import { getState, update, uid, getExercise, exerciseSessions, templateLastPerformed } from '../store.js';
+import { getState, update, uid, getExercise, exerciseSessions, templateLastPerformed, onClear } from '../store.js';
 import { esc, on, go, icon, relDays, sheetPromise, choose, confirmDialog, toast, num, fmtNum, fmtElapsed, setLabel, closeSheet } from '../ui.js';
 import { recommend } from '../progression.js';
 import { trainedDaysThisWeek } from '../stats.js';
@@ -91,6 +91,7 @@ function previewSheet(id) {
 
 // ---------- Template editor ----------
 let draft = null;
+onClear(() => { draft = null; }); // logout wipes the device: never show the previous user's unsaved template
 
 function ensureDraft(id) {
   if (draft && draft._for === id) return draft;

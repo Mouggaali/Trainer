@@ -6,6 +6,7 @@ const KEY = 'trainer.v1';
 const VERSION = 1;
 const listeners = new Set();
 const saveHooks = new Set();
+const clearHooks = new Set();
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -61,6 +62,28 @@ function defaults() {
   };
 }
 
+// Views escape free text with esc(), but put ids, numbers, dates and option values into HTML as they are, because
+// the app writes those itself. A backup file or the cloud copy can hold anything there, so every string outside the
+// free-text fields loses its markup characters. The app never writes these characters there: its data stays the same.
+const TEXT_KEYS = new Set(['name', 'brand', 'label', 'barcode', 'title', 'message']);
+const TEXT_MAPS = new Set(['exerciseNotes', 'monsterNames']); // { id: free text }
+const MARKUP = /[<>"'&]/g;
+
+function stripMarkup(root) {
+  const todo = [[root, false]];
+  while (todo.length) {
+    const [obj, textValues] = todo.pop();
+    for (const k of Object.keys(obj)) {
+      const v = obj[k];
+      if (v && typeof v === 'object') todo.push([v, TEXT_MAPS.has(k)]);
+      else if (typeof v === 'string' && !textValues && !TEXT_KEYS.has(k)) {
+        const clean = v.replace(MARKUP, '');
+        if (clean !== v) obj[k] = clean;
+      }
+    }
+  }
+}
+
 function migrate(data) {
   const base = defaults();
   const out = { ...base, ...data };
@@ -68,6 +91,7 @@ function migrate(data) {
   out.profile = { ...base.profile, ...(data.profile || {}) };
   // Future: if (out.version < 2) { ...; out.version = 2; }
   out.version = VERSION;
+  stripMarkup(out);
   return out;
 }
 
@@ -105,6 +129,11 @@ export function update(fn, { silent = false } = {}) {
 /** Called after every local change (used by sync.js to schedule an upload). */
 export function onSave(fn) {
   saveHooks.add(fn);
+}
+
+/** Called when this device is wiped (logout, account deletion): views drop in-memory copies such as unsaved drafts. */
+export function onClear(fn) {
+  clearHooks.add(fn);
 }
 
 /** Replace all data with a remote copy without triggering save hooks (no sync echo). */
@@ -173,6 +202,7 @@ export function clearLocalData() {
   Object.keys(state).forEach((k) => delete state[k]);
   Object.assign(state, defaults());
   save();
+  clearHooks.forEach((h) => h());
   listeners.forEach((l) => l());
 }
 

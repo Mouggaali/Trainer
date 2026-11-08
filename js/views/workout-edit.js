@@ -1,11 +1,12 @@
 // Edit a finished workout afterwards (wrong weight, forgotten set, wrong date).
 // Works on a draft copy; XP, badges, advice and records are derived, so they follow automatically.
-import { getState, update, uid, getExercise } from '../store.js';
+import { getState, update, uid, getExercise, onClear } from '../store.js';
 import { esc, on, go, icon, num, fmtNum, setLabel, toast, confirmDialog, choose } from '../ui.js';
 import { workoutPrs } from '../stats.js';
 import { pickExercise } from './exercises.js';
 
 let draft = null;
+onClear(() => { draft = null; }); // logout wipes the device: never show the previous user's unsaved edit
 
 const pad = (n) => String(n).padStart(2, '0');
 const isoDate = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };

@@ -40,6 +40,16 @@ test('niets wordt van een CDN of Google geladen', async ({ page }) => {
   expect(external).toEqual([]);
 });
 
+test('dev-server geeft alleen app-bestanden, geen geheimen of tooling (ook niet via LAN)', async ({ request }) => {
+  for (const p of ['/', '/sw.js', '/manifest.webmanifest', '/js/app.js', '/css/styles.css', '/icons/icon.svg']) {
+    expect((await request.get(p)).status(), p).toBe(200);
+  }
+  for (const p of ['/supabase/push.sql', '/supabase/functions/.env', '/supabase/push_secrets.local.sql', '/.env',
+    '/.env.example', '/.git/config', '/tools/make-vapid.js', '/server.js', '/package.json', '/js/..%5Csupabase%5Cpush.sql']) {
+    expect((await request.get(p)).status(), p).toBe(404);
+  }
+});
+
 test.describe('met inlogscherm', () => {
   test.use({ loginGate: true });
 

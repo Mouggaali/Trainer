@@ -18,11 +18,17 @@ const TYPES = {
   '.png': 'image/png',
   '.ico': 'image/x-icon',
 };
+// Serve only what the GitHub Pages deploy publishes (.github/workflows/deploy.yml). The server also listens on the
+// LAN, so .env, supabase/ (secrets from tools/make-vapid.js), tools/, .git/ … must never be reachable; dot-names
+// (dotfiles, NTFS tricks like "..::$INDEX_ALLOCATION") are refused too.
+const PUBLIC = new Set(['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'icons', 'fonts']);
 
 http.createServer((req, res) => {
   const urlPath = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   let file = path.normalize(path.join(ROOT, urlPath === '/' ? 'index.html' : urlPath));
-  if (!file.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
+  if (file !== ROOT && !file.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end(); }
+  const parts = path.relative(ROOT, file).split(path.sep);
+  if (!PUBLIC.has(parts[0]) || parts.some((p) => p.startsWith('.'))) { res.writeHead(404); return res.end('Not found'); }
   fs.stat(file, (err, stat) => {
     if (!err && stat.isDirectory()) file = path.join(file, 'index.html');
     fs.readFile(file, (err2, data) => {
